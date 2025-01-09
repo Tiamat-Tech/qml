@@ -8,33 +8,36 @@ The metadata JSON file for a given demo should be stored in the same folder as t
 
 ## Example
 
-Below is given an example of a complete metadata file for a demonstration. 
+Below is given an example of a complete metadata file for a demonstration.
 
 ```json
 {
     "title": "Basic arithmetic with the quantum Fourier transform (QFT)",
     "authors": [
         {
-            "id": "guillermo_alonso"
+            "username": "guillermo_alonso"
         }
     ],
-    "dateOfPublication": "2022-11-07T00:00:00",
-    "dateOfLastModification": "2023-01-20T00:00:00",
+    "dateOfPublication": "2022-11-07T00:00:00+00:00",
+    "dateOfLastModification": "2023-01-20T00:00:00+00:00",
     "categories": ["Getting Started"],
     "tags": ["quantum Fourier transforms", "qft"],
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/qft_arithmetics_thumbnail.png"
+            "uri": "/_images/thumbnail_tutorial_qft_arithmetics.png"
+        },
+        {
+            "type": "large_thumbnail",
+            "uri": "/_static/demo_thumbnails/large_demo_thumbnails/thumbnail_large_tutorial_<name>"
         },
         {
             "type": "hero_image",
-            "uri": "/_static/demos-illustrations/qft_arithmetics_thumbnail.png"
+            "uri": "/_static/hero_illustrations/qft_arithmetics_hero.png"
         }
     ],
     "seoDescription": "Learn how to use the quantum Fourier transform (QFT) to do basic arithmetic",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_qft_arithmetics",
     "references": [
         {
             "id": "Draper2000",
@@ -48,11 +51,18 @@ Below is given an example of a complete metadata file for a demonstration.
     ],
     "basedOnPapers": [],
     "referencedByPapers": [],
-    "relatedDemonstrations": [
+    "relatedContent": [
         {
             "type": "demonstration",
             "id": "tutorial_qubit_rotation",
             "weight": 1.0
+        }
+    ],
+    "hardware": [
+        {
+            "id": "aws",
+            "link": "https://pennylane.ai/qml/demos/tutorial_quantum_transfer_learning",
+            "logo": "/_static/hardware_logos/aws.png"
         }
     ]
 }
@@ -62,7 +72,7 @@ Below is given an example of a complete metadata file for a demonstration.
 
 ## Properties
 
-The table below gives details about the fields in the metadata JSON file.
+The table below gives details about the fields in the metadata JSON file for version 0.1.4.
 
 | Name | Is Required | Value Type | Description |
 |---|---|---|---|
@@ -75,18 +85,18 @@ The table below gives details about the fields in the metadata JSON file.
 | `previewImages` | Yes | `array` of `object` | An array of the different images that can be used as previews for this demo - e.g., thumbnails, social media cards (perhaps of different aspect ratios). See below for the object structure. |
 | `seoDescription` | Yes | `string` | A description of the demo suitable for SEO purposes. Ideally this should be less than 150 characters, but this is not a strict limit. It should be a full, grammatically-correct sentence ending in a full stop. |
 | `doi` | Yes, but can be an empty string | `string` | The DOI for this demo. |
-| `canonicalURL` | Yes | `url` | The canonical URL for this demo. Sometimes there might be more than one URL that points to a given page on a website. The canonical URL defines which of these should be thought of as the _primary_ or _main_ one. |
 | `references` | Yes | `array` of `object` | An array of the references used for this demo. See below for object structure. |
 | `basedOnPapers` | Yes, but can be an empty array | `array` of `string` | An array of the DOIs for the papers this demo is based on. |
 | `referencedByPapers` | Yes, but can be an empty array | `array` of `string` | An array of the DOIs of any papers that reference this demo. |
 | `relatedContent` | Yes, but can be an empty array | `array` of `object` | An array of objects describing the content related to this demo. See below for the object structure. |
+| `hardware` | No. Can be an empty array. | `array` of `object` | An array of objects representing third-party vendors who can run the demo on their hardware. See below for the object structure. |
 
 ### Author Object Properties
 
 | Name | Is Required | Value Type | Description |
 |---|---|---|---|
-| `id` | Yes | `string` | The id of this author. |
-| `affiliation` | No | `string` | The affiliation of this author - often the university they work at. |
+| `username` | No | `string` | The username of the author's PennyLane profile. Either this field or `name` must be provided. |
+| `name` | No | `string` | The full name of the author. Either this field of `username` must be provided. |
 
 ### Preview Image Object Properties
 
@@ -95,7 +105,7 @@ The table below gives details about the fields in the metadata JSON file.
 | `type` | Yes | `string` | What type of preview image this is. At the moment, the only value this can take is `thumbnail`, which refers to the image used on the QML part of pennylane.ai when browsing through lists of demos. |
 | `uri` | Yes | `string` | The URI of this image, whether it be something hosted locally or on another site. |
 
-### Reference Object Properties 
+### Reference Object Properties
 
 | Name | Is Required | Value Type | Description |
 |---|---|---|---|
@@ -106,12 +116,12 @@ The table below gives details about the fields in the metadata JSON file.
 | `year` | Yes | `string` | The year in which the paper or book was published. |
 | `month` | No | `string` | The month in which the paper or book was published. |
 | `journal` | No | `string` | The journal that the paper was published in. (Not relevant for books.) |
-| `publisher` | No | `string` | The publisher of the book. (Not relevant for papers.) | 
+| `publisher` | No | `string` | The publisher of the book. (Not relevant for papers.) |
 | `doi` | No | `string` | The DOI of the paper. (Not the DOI URL - just the DOI.) |
 | `url` | No | `string` | The URL of the paper or webpage. |
 | `pages` | No | `string` | The specific pages of a journal or book being referenced, as a mixed list of individual pages and page ranges - i.e., `57, 61-63, 67, 102-104`. |
 | `volume` | No | `string` | The volume of the journal or the multi-volume book. |
-| `number` | No | `string` | The number of the journal. | 
+| `number` | No | `string` | The number of the journal. |
 
 ### Related Content Object Properties
 
@@ -120,6 +130,14 @@ The table below gives details about the fields in the metadata JSON file.
 | `type` | Yes | `string` | The type of content that this relation refers to. So far, can only be `demonstration`, but this will be expanded in future. |
 | `id` | Yes | `string` | The id of the content that this relation refers to. For demos, it's the file name of the demo without the extension - i.e., `tutorial_haar_measure`. |
 | `weight` | Yes | `number` | A number between -1.0 and 1.0 indicating both how closely related these two pieces of content are, and which one it is preferable to encounter first. A value of 1.0 indicates that these two pieces of content are *very* closely related, and this one should be read first, and the linked one second. A value of -1.0 indicates again that these two pieces of content are very closely related, but that the linked one should be read first. A value of 0.0 indicates that these two pieces of content have nothing to do with each other. |
+
+### Hardware Object Properties
+
+| Name | Is Required | Value Type | Description |
+|---|---|---|---|
+| `id` | Yes | `enum` | The ID of the hardware vendor |
+| `link` | Yes | `string` | Link to run the demo on the vendor's hardware |
+| `logo` | Yes | `string` | The URI of the vendor's logo image, whether it be something hosted locally or on another site. |
 
 
 
@@ -131,12 +149,10 @@ The table below gives details about the fields in the metadata JSON file.
     "title": "",
     "authors": [
         {
-            "id": "",
-            "affiliation": ""
+            "username": ""
         },
         {
-            "id": "",
-            "affiliation": ""
+            "name": ""
         }
     ],
     "dateOfPublication": "",
@@ -151,7 +167,6 @@ The table below gives details about the fields in the metadata JSON file.
     ],
     "seoDescription": "",
     "doi": "",
-    "canonicalURL": "",
     "references": [
         {
             "id": "",
@@ -160,7 +175,6 @@ The table below gives details about the fields in the metadata JSON file.
             "authors": "",
             "year": "",
             "journal": "",
-            "doi": "",
             "url": ""
         },
         {
@@ -170,7 +184,6 @@ The table below gives details about the fields in the metadata JSON file.
             "authors": "",
             "year": "",
             "journal": "",
-            "doi": "",
             "url": ""
         },
         {
@@ -180,7 +193,6 @@ The table below gives details about the fields in the metadata JSON file.
             "authors": "",
             "year": "",
             "journal": "",
-            "doi": "",
             "url": ""
         }
     ],
@@ -201,7 +213,18 @@ The table below gives details about the fields in the metadata JSON file.
             "id": "",
             "weight": 1.0
         }
-    ]
+    ],
+    "relatedContent": [],
+    "hardware": []
 }
 ```
 
+## Validation
+
+The best way to ensure that your metadata file is consistent with the spec outlined here is to _validate_ it. Install and run [check-jsonschema](https://check-jsonschema.readthedocs.io/en/latest/index.html) against the version of the spec defined above:
+
+```bash
+pip install check-jsonschema 'jsonschema[format]'
+cd metadata_schemas
+check-jsonschema --schemafile demo.metadata.schema.<version>.json ../demonstrations/<your_demo_name>.metadata.json
+```

@@ -6,7 +6,7 @@ Ensemble classification with Rigetti and Qiskit devices
     :property="og:description": We demonstrate how two QPUs can be
         combined in parallel to help solve a machine learning classification problem,
         using PyTorch and PennyLane.
-    :property="og:image": https://pennylane.ai/qml/_images/ensemble_diagram.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/ensemble_diagram.png
 
 .. related
 
@@ -16,6 +16,12 @@ Ensemble classification with Rigetti and Qiskit devices
 
 This tutorial outlines how two QPUs can be combined in parallel to help solve a machine learning
 classification problem.
+
+.. warning::
+    This demo does not work with the latest version of Qiskit or the Pennylane-Qiskit plugin.
+    It is compatible with ``qiskit==0.46`` and ``pennylane-qiskit==0.35.1``. Older versions of
+    Qiskit and the Pennylane-Qiskit plugin should not be installed in environments with an
+    existing installation of Qiskit 1.0 or above.
 
 We use the ``rigetti.qvm`` device to simulate one QPU and the ``qiskit.aer`` device to
 simulate another. Each QPU makes an independent prediction, and an ensemble model is
@@ -46,6 +52,16 @@ from matplotlib.patches import Patch
 # /interfaces.html>`_, which can be installed from `here
 # <https://pytorch.org/get-started/locally/>`__.
 #
+# .. warning::
+#    Rigetti's QVM and Quil Compiler services must be running for this tutorial to execute. They
+#    can be installed by consulting the `Rigetti documentation
+#    <http://docs.rigetti.com/qcs/>`__ or, for users with Docker, by running:
+#
+#    .. code-block:: bash
+#
+#        docker run -d -p 5555:5555 rigetti/quilc -R -p 5555
+#        docker run -d -p 5000:5000 rigetti/qvm -S -p 5000
+#
 # Load data
 # ---------
 #
@@ -64,7 +80,9 @@ y = data["target"]
 # plotting later on. The first two principal components of the data are used.
 
 np.random.seed(1967)
-x, y = zip(*np.random.permutation(list(zip(x, y))))
+
+data_order = np.random.permutation(np.arange(n_samples))
+x, y = x[data_order], y[data_order]
 
 pca = sklearn.decomposition.PCA(n_components=n_features)
 pca.fit(x)
@@ -72,7 +90,7 @@ x = pca.transform(x)
 
 ##############################################################################
 # We will be encoding these two features into quantum circuits using :class:`~.pennylane.RX`
-# rotations, and hence renormalize our features to be between :math:`[-\pi, \pi]`.
+# rotations, and hence renormalize our features to be between :math:`[-\pi, \pi].`
 
 
 x_min = np.min(x, axis=0)
@@ -137,7 +155,7 @@ plot_points(x_train, y_train, x_test, y_test)
 plt.show()
 
 ##############################################################################
-# .. figure:: /demonstrations/ensemble_multi_qpu/ensemble_multi_qpu_001.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/ensemble_multi_qpu_001.png
 #    :width: 80%
 #    :align: center
 #
@@ -162,7 +180,7 @@ plt.show()
 # (i.e., the class with the highest overall probability over all QPUs) and uses that to make a
 # prediction.
 #
-# .. figure:: /demonstrations/ensemble_multi_qpu/ensemble_diagram.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/ensemble_diagram.png
 #    :width: 80%
 #    :align: center
 #
@@ -182,21 +200,12 @@ devs = [dev0, dev1]
 #    If you have access to Rigetti hardware, you can swap out ``rigetti.qvm`` for ``rigetti.qpu``
 #    and specify the hardware device to run on. Users with access to the IBM Q Experience can
 #    swap ``qiskit.aer`` for ``qiskit.ibmq`` and specify their chosen backend (see `here
-#    <https://pennylane-qiskit.readthedocs.io/en/latest/gettingstarted.html#ibm-q-experience>`__).
+#    <https://docs.pennylane.ai/projects/qiskit/en/latest/devices/ibmq.html>`__).
 #
-# .. warning::
-#    Rigetti's QVM and Quil Compiler services must be running for this tutorial to execute. They
-#    can be installed by consulting the `Rigetti documentation
-#    <http://docs.rigetti.com/qcs/>`__ or, for users with Docker, by running:
-#
-#    .. code-block:: bash
-#
-#        docker run -d -p 5555:5555 rigetti/quilc -R -p 5555
-#        docker run -d -p 5000:5000 rigetti/qvm -S -p 5000
 #
 # The circuits for both QPUs are shown in the figure below:
 #
-# .. figure:: /demonstrations/ensemble_multi_qpu/diagram_circuits.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/diagram_circuits.png
 #    :width: 80%
 #    :align: center
 
@@ -230,13 +239,12 @@ def circuit1(params, x=None):
 
 
 ##############################################################################
-# We finally combine the two devices into a :class:`~.pennylane.QNode` list that uses the
-# PyTorch interface:
+# We finally combine the two devices into a :class:`~.pennylane.QNode` list:
 
 
 qnodes = [
-    qml.QNode(circuit0, dev0, interface="torch"),
-    qml.QNode(circuit1, dev1, interface="torch"),
+    qml.QNode(circuit0, dev0),
+    qml.QNode(circuit1, dev1),
 ]
 
 ##############################################################################
@@ -258,7 +266,7 @@ def decision(softmax):
 
 def predict_point(params, x_point=None, parallel=True):
     if parallel:
-        results = tuple(dask.delayed(q)(params, x=x_point) for q in qnodes)
+        results = tuple(dask.delayed(q)(params, x=torch.from_numpy(x_point)) for q in qnodes)
         results = torch.tensor(dask.compute(*results, scheduler="threads"))
     else:
         results = tuple(q(params, x=x_point) for q in qnodes)
@@ -296,10 +304,10 @@ def predict(params, x=None, parallel=True):
 # ----------------
 #
 # To test our model, we first load a pre-trained set of parameters which can also be downloaded
-# by clicking :download:`here <../demonstrations/ensemble_multi_qpu/params.npy>`.
+# by clicking :download:`here <../_static/demonstration_assets/ensemble_multi_qpu/params.npy>`.
 
 
-params = np.load("ensemble_multi_qpu/params.npy")
+params = np.load("../_static/demonstration_assets/ensemble_multi_qpu/params.npy")
 
 ##############################################################################
 # We can then make predictions for the training and test datasets.
@@ -313,7 +321,6 @@ p_test, p_test_0, p_test_1, choices_test = predict(params, x=x_test)
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -363,7 +370,6 @@ print("Training accuracy (QPU1):  {}".format(accuracy(p_train_1, y_train)))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -380,7 +386,6 @@ print("Test accuracy (QPU1):  {}".format(accuracy(p_test_1, y_test)))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -419,7 +424,6 @@ print("Choices counts: {}".format(Counter(choices)))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -456,7 +460,6 @@ print("\nDistribution of classes in iris dataset: {}".format(Counter(y)))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -535,7 +538,7 @@ plot_points_prediction(x, y, predictions, "ensemble")  # ensemble
 plt.show()
 
 ##############################################################################
-# .. figure:: /demonstrations/ensemble_multi_qpu/ensemble_multi_qpu_002.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/ensemble_multi_qpu_002.png
 #    :width: 80%
 #    :align: center
 #
@@ -546,7 +549,7 @@ plot_points_prediction(x, y, np.append(p_train_0, p_test_0), "QPU0")  # QPU 0
 plt.show()
 
 ##############################################################################
-# .. figure:: /demonstrations/ensemble_multi_qpu/ensemble_multi_qpu_003.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/ensemble_multi_qpu_003.png
 #    :width: 80%
 #    :align: center
 #
@@ -557,7 +560,7 @@ plot_points_prediction(x, y, np.append(p_train_1, p_test_1), "QPU1")  # QPU 1
 plt.show()
 
 ##############################################################################
-# .. figure:: /demonstrations/ensemble_multi_qpu/ensemble_multi_qpu_004.png
+# .. figure:: /_static/demonstration_assets/ensemble_multi_qpu/ensemble_multi_qpu_004.png
 #    :width: 80%
 #    :align: center
 #

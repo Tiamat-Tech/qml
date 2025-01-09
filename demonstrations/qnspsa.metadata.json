@@ -2,11 +2,11 @@
     "title": "Quantum natural SPSA optimizer",
     "authors": [
         {
-            "id": "yiheng_duan"
+            "username": "yduan"
         }
     ],
-    "dateOfPublication": "2022-07-18T00:00:00",
-    "dateOfLastModification": "2022-09-05T00:00:00",
+    "dateOfPublication": "2022-07-18T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
     "categories": [
         "Optimization"
     ],
@@ -14,15 +14,15 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/qnspsa_cover.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_quantum_natural_SPSA_optimizer.png"
         }
     ],
     "seoDescription": "Introduction to the Quantum natural SPSA optimizer, which reduces the number of quantum measurements in the optimization.",
     "doi": "",
-    "canonicalURL": "/qml/demos/qnspsa",
     "references": [
         {
             "id": "Gacon2021",
+            "type": "article",
             "title": "Simultaneous perturbation stochastic approximation of the quantum fisher information",
             "authors": "Gacon, J., Zoufal, C., Carleo, G., & Woerner, S.",
             "year": "2021",
@@ -32,12 +32,14 @@
         },
         {
             "id": "SPSA",
+            "type": "webpage",
             "title": "Simultaneous perturbation stochastic approximation",
             "year": "2022",
             "url": "https://en.wikipedia.org/wiki/Simultaneous_perturbation_stochastic_approximation"
         },
         {
             "id": "Stokes2020",
+            "type": "article",
             "title": "Quantum natural gradient",
             "authors": "Stokes, J., Izaac, J., Killoran, N., & Carleo, G.",
             "year": "2020",
@@ -47,12 +49,14 @@
         },
         {
             "id": "FS",
+            "type": "webpage",
             "title": "Fubini–Study metric",
             "year": "2022",
             "url": "https://en.wikipedia.org/wiki/Fubini%E2%80%93Study_metric"
         },
         {
             "id": "Yamamoto2019",
+            "type": "article",
             "title": "On the natural gradient for variational quantum eigensolver",
             "authors": "Yamamoto, N.",
             "year": "2019",
@@ -62,6 +66,7 @@
         },
         {
             "id": "Spall1997",
+            "type": "article",
             "title": "Accelerated second-order stochastic optimization using only function measurements",
             "authors": "Spall, J. C.",
             "year": "1997",
@@ -76,5 +81,12 @@
         "10.22331/q-2021-10-20-567"
     ],
     "referencedByPapers": [],
-    "relatedContent": []
+    "relatedContent": [],
+    "hardware": [
+        {
+            "id": "aws",
+            "link": "https://github.com/amazon-braket/amazon-braket-examples/blob/main/examples/hybrid_jobs/6_QNSPSA_optimizer_with_embedded_simulator/qnspsa_with_embedded_simulator.ipynb",
+            "logo": "/_static/hardware_logos/aws.png"
+        }
+    ]
 }

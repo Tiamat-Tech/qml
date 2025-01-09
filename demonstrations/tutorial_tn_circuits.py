@@ -6,7 +6,7 @@ Tensor-network quantum circuits
 
 .. meta::
     :property="og:description": This demonstration explains how to simulate tensor-network quantum circuits.
-    :property="og:image": https://pennylane.ai/qml/_images/thumbnail_tn_circuits.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/thumbnail_tn_circuits.png
 
 .. related::
 
@@ -15,10 +15,7 @@ Tensor-network quantum circuits
 *Authors: Diego Guala*:superscript:`1` *, Esther Cruz-Rico*:superscript:`2` *,
 Shaoming Zhang*:superscript:`2` *, Juan Miguel Arrazola*:superscript:`1` *— Posted: 29 March 2022. Last updated: 27 June 2022.*
 
-| :sup:`1` Xanadu, Toronto, ON, M5G 2C8, Canada
-| :sup:`2` BMW Group, Munich, Germany
-
-This demonstration explains how to use PennyLane templates to design and implement tensor-network quantum circuits
+This demonstration, written in collaboration between Xanadu and the BMW group, explains how to use PennyLane templates to design and implement tensor-network quantum circuits
 as in Ref. [#Huggins]_. Tensor-network quantum circuits emulate the shape and connectivity of tensor networks such as matrix product states 
 and tree tensor networks.
 
@@ -33,7 +30,7 @@ Tensors are multi-dimensional arrays of numbers.
 Intuitively, they can be interpreted as a
 generalization of scalars, vectors, and matrices. 
 Tensors can be described by their rank, indices, and the dimension of the indices.
-The rank is the number of indices in a tensor --- a scalar has 
+The rank is the number of indices in a tensor — a scalar has 
 rank zero, a vector has rank one, and a matrix has rank two.
 The dimension of an index is the number of values that index can take.
 For example, a vector with three elements has one index that can take three
@@ -43,10 +40,10 @@ three.
 To define tensor networks, it is important to first understand tensor contraction.
 Two or more tensors can be contracted by summing over repeated indices.
 In diagrammatic notation, the repeated indices appear as lines connecting tensors, as in the figure below. 
-We see two tensors of rank two connected by one repeated index, :math:`k`. The dimension of the
+We see two tensors of rank two connected by one repeated index, :math:`k.` The dimension of the
 repeated index is called the bond dimension.
 
-.. image:: ../demonstrations/tn_circuits/simple_tn_color.PNG
+.. image:: ../_static/demonstration_assets/tn_circuits/simple_tn_color.PNG
     :align: center
     :width: 50 %
 
@@ -56,7 +53,7 @@ matrix multiplication formula and can be expressed as
 .. math::
     C_{ij} = \sum_{k}A_{ik}B_{kj},
 
-where :math:`C_{ij}` denotes the entry for the :math:`i`-th row and :math:`j`-th column of the product :math:`C=AB`. 
+where :math:`C_{ij}` denotes the entry for the :math:`i`-th row and :math:`j`-th column of the product :math:`C=AB.` 
 
 A tensor network is a collection of tensors where a subset of 
 all indices are contracted. As mentioned above, we can use diagrammatic notation
@@ -70,7 +67,7 @@ These follow specific patterns of connections between tensors and can be extende
 many or few indices. Examples of these architectures with only a few tensors 
 can be seen in the figure below. An MPS is shown on the left and a TTN on the right.
 
-.. image:: ../demonstrations/tn_circuits/MPS_TTN_Color.PNG
+.. image:: ../_static/demonstration_assets/tn_circuits/MPS_TTN_Color.PNG
     :align: center
     :width: 50 %
 
@@ -88,7 +85,7 @@ guideline for the shape of the quantum circuit.
 More specifically, the tensors in the tensor networks above are replaced with
 unitary operations to obtain quantum circuits, as illustrated in the figure below.
 
-.. image:: ../demonstrations/tn_circuits/MPS_TTN_Circuit_Color.PNG
+.. image:: ../_static/demonstration_assets/tn_circuits/MPS_TTN_Circuit_Color.PNG
     :align: center
     :width: 70 %
 
@@ -119,6 +116,7 @@ We call this a block. The block defines a variational quantum circuit that takes
 of tensors in the network.
 """
 
+import numpy as onp
 import pennylane as qml
 from pennylane import numpy as np
 
@@ -138,7 +136,7 @@ def block(weights, wires):
 dev = qml.device("default.qubit", wires=4)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev)
 def circuit(template_weights):
     qml.MPS(
         wires=range(4),
@@ -153,7 +151,7 @@ def circuit(template_weights):
 np.random.seed(1)
 weights = np.random.random(size=[3, 2])
 qml.drawer.use_style("black_white")
-fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(weights)
+fig, ax = qml.draw_mpl(circuit, level="device")(weights)
 fig.set_size_inches((6, 3))
 
 ##############################################################################
@@ -173,7 +171,7 @@ def deep_block(weights, wires):
 dev = qml.device("default.qubit", wires=4)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev)
 def circuit(template_weights):
     qml.MPS(
         wires=range(4),
@@ -199,7 +197,7 @@ def circuit(template_weights):
 
 shape = qml.StronglyEntanglingLayers.shape(n_layers=2, n_wires=2)
 template_weights = [np.random.random(size=shape)] * 3
-fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(template_weights)
+fig, ax = qml.draw_mpl(circuit, level="device")(template_weights)
 
 ##############################################################################
 # In addition to deep blocks, we can easily expand to wider blocks with more
@@ -222,7 +220,7 @@ def wide_block(weights, wires):
 dev = qml.device("default.qubit", wires=8)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev)
 def circuit(template_weights):
     qml.MPS(
         wires=range(8),
@@ -235,9 +233,9 @@ def circuit(template_weights):
 
 
 shapes = qml.SimplifiedTwoDesign.shape(n_layers=1, n_wires=4)
-weights = [np.random.random(size=shape) for shape in shapes]
-template_weights = [weights] * 3
-fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(template_weights)
+weights = [onp.random.random(size=shape) for shape in shapes]
+template_weights = onp.array([weights] * 3, dtype="object")
+fig, ax = qml.draw_mpl(circuit, level="device")(template_weights)
 
 ##############################################################################
 # We can also broadcast a block to the tree tensor network architecture by using the
@@ -253,7 +251,7 @@ def block(weights, wires):
 dev = qml.device("default.qubit", wires=8)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev)
 def circuit(template_weights):
     qml.TTN(
         wires=range(8),
@@ -266,7 +264,7 @@ def circuit(template_weights):
 
 
 weights = np.random.random(size=[7, 2])
-fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(weights)
+fig, ax = qml.draw_mpl(circuit, level="device")(weights)
 fig.set_size_inches((4, 4))
 ##############################################################################
 # Classifying the bars and stripes data set
@@ -279,7 +277,7 @@ fig.set_size_inches((4, 4))
 # In images with the stripes label, all pixels in any given row have the same color.
 # The full data set for :math:`4\times 4` images is shown in the image below:
 #
-# .. figure:: ../demonstrations/tn_circuits/BAS.png
+# .. figure:: ../_static/demonstration_assets/tn_circuits/BAS.png
 #   :align: center
 #   :height: 300
 #
@@ -320,19 +318,19 @@ def block(weights, wires):
 
 ##############################################################################
 # As for the tensor-network architecture, we use the tree tensor-network quantum circuit.
-# We use :class:`~pennylane.BasisStatePreparation` to encode the input images.
-# The following code implements the :class:`~pennylane.BasisStatePreparation` encoding,
+# We use :class:`~pennylane.BasisState` to encode the input images.
+# The following code implements the :class:`~pennylane.BasisState` encoding,
 # followed by a :class:`~pennylane.TTN` circuit using the above ``block``. Finally, we compute the expectation
 # value of a :class:`~pennylane.PauliZ` measurement as the output.
-# The circuit diagram below shows the full circuit. The :class:`~pennylane.BasisStatePreparation`
+# The circuit diagram below shows the full circuit. The :class:`~pennylane.BasisState`
 # encoding appears in the initial :class:`~pennylane.PauliX` gates.
 
 dev = qml.device("default.qubit", wires=4)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev)
 def circuit(image, template_weights):
-    qml.BasisStatePreparation(image, wires=range(4))
+    qml.BasisState(image, wires=range(4))
     qml.TTN(
         wires=range(4),
         n_block_wires=2,
@@ -344,7 +342,7 @@ def circuit(image, template_weights):
 
 
 weights = np.random.random(size=[3, 2])
-fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(BAS[0], weights)
+fig, ax = qml.draw_mpl(circuit, level="device")(BAS[0], weights)
 fig.set_size_inches((6, 3.5))
 
 ##############################################################################
@@ -384,7 +382,7 @@ for k in range(100):
 # we can now show the full circuits and the resulting output for each image.
 
 for image in BAS:
-    fig, ax = qml.draw_mpl(circuit, expansion_strategy="device")(image, params)
+    fig, ax = qml.draw_mpl(circuit, level="device")(image, params)
     plt.figure(figsize=[1.8, 1.8])
     plt.imshow(np.reshape(image, [2, 2]), cmap="gray")
     plt.title(

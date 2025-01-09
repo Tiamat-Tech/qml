@@ -2,37 +2,39 @@
     "title": "Optimization using SPSA",
     "authors": [
         {
-            "id": "antal_szava"
+            "username": "aszava"
         },
         {
-            "id": "david_wierichs"
+            "username": "dwierichs"
         }
     ],
-    "dateOfPublication": "2023-03-19T00:00:00",
-    "dateOfLastModification": "2023-02-23T00:00:00",
-    "categories": [],
+    "dateOfPublication": "2023-03-19T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
+    "categories": [
+        "Optimization"
+    ],
     "tags": [],
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/spsa_mntn.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_optimization_SPSA.png"
         }
     ],
     "seoDescription": "Use the simultaneous perturbation stochastic approximation algorithm to optimize variational circuits in PennyLane.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_spsa",
     "references": [
         {
             "id": "spall_overview",
+            "type": "article",
             "title": "An Overview of the Simultaneous Perturbation Method for Efficient Optimization",
             "authors": "James C. Spall",
             "year": "1998",
             "journal": "",
-            "doi": "",
             "url": "https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF"
         },
         {
             "id": "spall_implementation",
+            "type": "article",
             "title": "Implementation of the simultaneous perturbation algorithm for stochastic optimization",
             "authors": "J. C. Spall",
             "year": "1998",
@@ -45,6 +47,7 @@
         },
         {
             "id": "spall_hessian",
+            "type": "article",
             "title": "Adaptive stochastic approximation by the simultaneous perturbation method",
             "authors": "J. C. Spall",
             "year": "2020",
@@ -57,11 +60,11 @@
         },
         {
             "id": "qnspsa",
+            "type": "article",
             "title": "Simultaneous Perturbation Stochastic Approximation of the Quantum Fisher Information",
             "authors": "J. Gacon, C. Zoufal, G. Carleo, and S. Woerner",
             "year": "2021",
             "journal": "Quantum",
-            "doi": "",
             "url": "https://quantum-journal.org/papers/q-2021-10-20-567/"
         }
     ],

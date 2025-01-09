@@ -5,7 +5,10 @@ Quantum computation with neutral atoms
 .. meta::
     :property="og:description": Neutral atom quantum devices allow you to place
         qubits within interesting three-dimensional configurations.
-    :property="og:image": https://pennylane.ai/qml/_images/pasqal_thumbnail.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/pasqal_thumbnail.png
+
+.. related::
+   ahs_aquila Pulse programming on neutral atom hardware
 
 *Author: Nathan Killoran — Posted: 13 October 2020. Last updated: 21 January 2021.*
 
@@ -51,7 +54,7 @@ Let's get to it!
    `PennyLane-cirq plugin <https://pennylane-cirq.readthedocs.io/en/latest/>`_
    (version >= 0.13). You will also need to download a copy of the data, which
    is available `here
-   <https://github.com/PennyLaneAI/qml/blob/master/demonstrations/pasqal/Eiffel_tower_data.dat>`_.
+   <https://github.com/PennyLaneAI/qml/blob/master/_static/demonstration_assets/pasqal/Eiffel_tower_data.dat>`_.
 
 """
 
@@ -65,7 +68,7 @@ Let's get to it!
 # path where you have saved the downloaded data).
 
 import numpy as np
-coords = np.loadtxt("pasqal/Eiffel_tower_data.dat")
+coords = np.loadtxt("../_static/demonstration_assets/pasqal/Eiffel_tower_data.dat")
 xs = coords[:,0]
 ys = coords[:,1]
 zs = coords[:,2]
@@ -80,7 +83,7 @@ ax.set_ylim(-20, 20)
 ax.set_zlim(-40, 10)
 plt.axis('off')
 ax.scatter(xs, ys, zs, c='g',alpha=0.3)
-plt.show();
+plt.show()
 
 ##############################################################################
 # This dataset contains 126 points. Each point represents a distinct
@@ -109,7 +112,7 @@ subset_xs = qubit_coords[:, 0]
 subset_ys = qubit_coords[:, 1]
 subset_zs = qubit_coords[:, 2]
 ax.scatter(subset_xs, subset_ys, subset_zs, c='r', alpha=1.0)
-plt.show();
+plt.show()
 
 ##############################################################################
 # Converting to Cirq qubits
@@ -234,7 +237,7 @@ for corner in range(4):
             zs=[third_z[corner], third_z[(corner + 1) % 4]],
             c='grey', linestyle='--');
 
-plt.show();
+plt.show()
 
 ##############################################################################
 # In this figure, the red dots represent the specific qubits we will use in
@@ -287,10 +290,10 @@ def circuit(weights, data):
 # problem.
 # For the purposes of this demo, we will consider a very simple classifier:
 #
-# * if the first input qubit is in the state :math:`\mid 0 \rangle`, the model
+# * if the first input qubit is in the state :math:`\mid 0 \rangle,` the model
 #   should make the prediction "0", and
 #
-# * if the first input qubit is in the state :math:`\mid 1 \rangle`, the model
+# * if the first input qubit is in the state :math:`\mid 1 \rangle,` the model
 #   should predict "1" (independent of the states of all other qubits).
 #
 # In other words, the idealized trained model should learn an
@@ -320,7 +323,7 @@ def cost():
 opt = tf.keras.optimizers.Adam(learning_rate=0.1)
 
 for step in range(100):
-    opt.minimize(cost, weights)
+    opt.minimize(cost, [weights])
     if step % 5 == 0:
         print("Step {}: cost={}".format(step, cost()))
 

@@ -6,7 +6,7 @@ Optimizing a quantum optical neural network
 
 .. meta::
     :property="og:description": Optimizing a quantum optical neural network using PennyLane.
-    :property="og:image": https://pennylane.ai/qml/_images/qonn_thumbnail.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/qonn_thumbnail.png
 
 .. related::
 
@@ -33,7 +33,7 @@ of how to use third-party optimization libraries with PennyLane; in this case, `
 """
 
 ######################################################################
-# .. figure:: ../demonstrations/qonn/qonn_thumbnail.png
+# .. figure:: ../_static/demonstration_assets/qonn/qonn_thumbnail.png
 #     :width: 100%
 #     :align: center
 #
@@ -193,7 +193,7 @@ def cost(var, data_input, labels):
 # For this tutorial we will train the network to function as a CNOT gate.
 # That is, it should transform the input states in the following way:
 #
-# .. figure:: ../demonstrations/qonn/cnot.png
+# .. figure:: ../_static/demonstration_assets/qonn/cnot.png
 #     :width: 30%
 #     :align: center
 #
@@ -202,8 +202,8 @@ def cost(var, data_input, labels):
 # We need to choose the inputs ``X`` and the corresponding labels ``Y``. They are
 # defined using the dual-rail encoding, meaning that :math:`|0\rangle = [1, 0]`
 # (as a vector in the Fock basis of a single mode), and
-# :math:`|1\rangle = [0, 1]`. So a CNOT transformation of :math:`|1\rangle|0\rangle = |10\rangle = [0, 1, 1, 0]`
-# would give :math:`|11\rangle = [0, 1, 0, 1]`.
+# :math:`|1\rangle = [0, 1].` So a CNOT transformation of :math:`|1\rangle|0\rangle = |10\rangle = [0, 1, 1, 0]`
+# would give :math:`|11\rangle = [0, 1, 0, 1].`
 #
 # Furthermore, we want to make sure that the gradient isn't calculated with regards
 # to the inputs or the labels. We can do this by marking them with `requires_grad=False`.
@@ -272,14 +272,14 @@ Y = np.array([[1, 0, 1, 0],
 ######################################################################
 # Now, we must set the number of layers to use and then calculate the
 # corresponding number of initial parameter values, initializing them with
-# a random value between :math:`-2\pi` and :math:`2\pi`. For the CNOT gate two layers is
+# a random value between :math:`-2\pi` and :math:`2\pi.` For the CNOT gate two layers is
 # enough, although for more complex optimization tasks, many more layers
 # might be needed. Generally, the more layers there are, the richer the
 # representational capabilities of the neural network, and the better it
 # will be at finding a good fit.
 #
 # The number of variables corresponds to the number of transmittivity
-# angles :math:`\theta` and phase angles :math:`\phi`, while the Kerr
+# angles :math:`\theta` and phase angles :math:`\phi,` while the Kerr
 # non-linearity is set to a fixed strength.
 #
 
@@ -294,7 +294,6 @@ print(var_init)
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -354,7 +353,6 @@ var = var.reshape(var_init.shape)
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -433,7 +431,6 @@ for i, x in enumerate(X):
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -456,7 +453,6 @@ print(qml.draw(quantum_neural_net)(var_init, X[0]))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #

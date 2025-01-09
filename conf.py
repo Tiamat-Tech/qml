@@ -18,8 +18,10 @@ import warnings
 import numpy as np
 from jinja2 import FileSystemLoader, Environment
 import yaml
+from pennylane import PennyLaneDeprecationWarning
 
 sys.path.insert(0, os.path.abspath("."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 
 # -- Project information -----------------------------------------------------
@@ -51,11 +53,11 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx_gallery.gen_gallery",
-    "sphinx_sitemap",
+    "extension",
 ]
 
 
-html_baseurl = 'https://pennylane.ai/qml/'
+html_baseurl = "https://pennylane.ai/qml/"
 
 sphinx_gallery_conf = {
     # path to your example scripts
@@ -75,14 +77,16 @@ sphinx_gallery_conf = {
     ),
     # thumbnail size
     "thumbnail_size": (400, 400),
-    'reference_url': {
-         # The module you locally document uses None
-        'pennylane': "https://docs.pennylane.ai/en/stable/",
+    "reference_url": {
+        # The module you locally document uses None
+        "pennylane": None,  # "https://docs.pennylane.ai/en/stable",
     },
-    'backreferences_dir'  : 'backreferences',
-    'doc_module'          : ('pennylane'),
-    'junit': '../test-results/sphinx-gallery/junit.xml',
+    "backreferences_dir"  : "backreferences",
+    "doc_module"          : ("pennylane"),
+    "junit": "../test-results/sphinx-gallery/junit.xml",
+    "reset_modules": ("module_resets.reset_jax", "matplotlib", "seaborn"),
 }
+
 
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"
 
@@ -102,6 +106,12 @@ warnings.filterwarnings(
     "ignore",
     category=np.VisibleDeprecationWarning,
     message=r"Creating an ndarray from ragged"
+)
+
+# Raise PennyLane deprecation warnings as errors
+warnings.filterwarnings("error", category=PennyLaneDeprecationWarning)
+warnings.filterwarnings(
+    "ignore", message="Device will no longer be accessible", category=PennyLaneDeprecationWarning
 )
 
 # Add any paths that contain templates here, relative to this directory.
@@ -126,7 +136,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*venv"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*venv", "sphinxext"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -189,28 +199,11 @@ html_css_files = ["css/light-slider.css", "css/hubs.css"]
 # Output file base name for HTML help builder.
 htmlhelp_basename = "QMLdoc"
 
-# -- Compile community demos -------------------------------------------------
-
-with open("demos_community.yaml", "r") as f:
-    card_data = yaml.safe_load(f)
-
-left_cards = card_data[::2]
-right_cards = card_data[1::2]
-
-if len(left_cards) > len(right_cards):
-    right_cards.append({})
-
-card_pairs = list(zip(left_cards, right_cards))
-
-loader = FileSystemLoader(".")
-env = Environment(loader=loader)
-template = env.get_template("demos_community.rst.template")
-
-with open("demos_community.rst", 'w') as f:
-    f.write(template.render(card_pairs=card_pairs))
 
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.pennylane.ai/en/stable/": None}
-
+intersphinx_mapping = {
+    "pennylane": ("https://docs.pennylane.ai/en/stable/", None),
+    "catalyst": ("https://docs.pennylane.ai/projects/catalyst/en/stable", None)
+}

@@ -5,7 +5,7 @@ Error mitigation with Mitiq and PennyLane
 .. meta::
     :property="og:description": Learn how to mitigate quantum circuits using Mitiq and PennyLane.
 
-    :property="og:image": https://pennylane.ai/qml/_images/laptop.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/laptop.png
 
 .. related::
 
@@ -23,7 +23,7 @@ error-prone NISQ devices for practical tasks? One proposed solution is to adopt 
 error *mitigation*, which aims to minimize the effects of noise by executing a family of related
 circuits and using the results to estimate an error-free value.
 
-.. figure:: ../demonstrations/error_mitigation/laptop.png
+.. figure:: ../_static/demonstration_assets/error_mitigation/laptop.png
     :align: center
     :scale: 55%
     :alt: Mitiq and PennyLane
@@ -49,35 +49,39 @@ accurately calculate the potential energy surface of molecular hydrogen.
 Mitigating noise in a simple circuit
 ------------------------------------
 
-We first need a noisy device to execute our circuit on. Let's keep things simple for now by loading
-the :mod:`default.mixed <pennylane.devices.default_mixed>` simulator and artificially adding
-:class:`PhaseDamping <pennylane.PhaseDamping>` noise.
+We first need a noisy device to execute our circuit on. Let's keep things simple
+for now by loading the :mod:`default.mixed <pennylane.devices.default_mixed>` simulator
+and artificially adding :class:`PhaseDamping <pennylane.PhaseDamping>` noise using a
+:class:`NoiseModel <pennylane.NoiseModel>`.
 """
 
 import pennylane as qml
 
 n_wires = 4
 
-# Describe noise
-noise_gate = qml.PhaseDamping
-noise_strength = 0.1
+# Describe noise model
+fcond = qml.noise.wires_in(range(n_wires))
+noise = qml.noise.partial_wires(qml.PhaseDamping, 0.1)
+noise_model = qml.NoiseModel({fcond: noise})
 
 # Load devices
 dev_ideal = qml.device("default.mixed", wires=n_wires)
-dev_noisy = qml.transforms.insert(noise_gate, noise_strength)(dev_ideal)
+dev_noisy = qml.add_noise(dev_ideal, noise_model=noise_model)
 
 ###############################################################################
-# In the above, we load a noise-free device ``dev_ideal`` and a noisy device ``dev_noisy``, which
-# is constructed from the :func:`qml.transforms.insert <pennylane.transforms.insert>` transform.
-# This transform works by intercepting each circuit executed on the device and adding the
-# :class:`PhaseDamping <pennylane.PhaseDamping>` noise channel directly after every gate in the
-# circuit. To get a better understanding of noise channels like
-# :class:`PhaseDamping <pennylane.PhaseDamping>`, check out the :doc:`tutorial_noisy_circuits`
-# tutorial.
+# In the above, we load a noise-free device ``dev_ideal`` and a noisy device ``dev_noisy``,
+# which is constructed from the :func:`qml.add_noise <pennylane.transforms.add_noise>`
+# transform. This transform works by intercepting each circuit executed on the device and
+# adding the noise to it based on the ``noise_model``. For example, in this case, it will
+# add :class:`PhaseDamping <pennylane.PhaseDamping>` noise channel after every gate in the
+# circuit acting on wires :math:`[0, 1, 2, 3]`. To get a better understanding of noise
+# channels like :class:`PhaseDamping <pennylane.PhaseDamping>` and using noise models,
+# check out the :doc:`tutorial_noisy_circuits` and :doc:`tutorial_how_to_use_noise_models`
+# tutorials, respectively.
 #
 # The next step is to define our circuit. Inspired by the mirror circuits concept introduced by
 # Proctor *et al.* [#proctor2020measuring]_ let's fix a circuit that applies a unitary :math:`U`
-# followed by its inverse :math:`U^{\dagger}`, with :math:`U` given by the
+# followed by its inverse :math:`U^{\dagger},` with :math:`U` given by the
 # :class:`SimplifiedTwoDesign <pennylane.SimplifiedTwoDesign>`
 # template. We also fix a measurement of the :class:`PauliZ <pennylane.PauliZ>` observable on our
 # first qubit. Importantly, such a circuit performs an identity transformation
@@ -112,11 +116,12 @@ def circuit(w1, w2):
 
 ideal_qnode = qml.QNode(circuit, dev_ideal)
 noisy_qnode = qml.QNode(circuit, dev_noisy)
+noisy_qnode = qml.transforms.decompose(noisy_qnode, gate_set = ["RY", "CZ"])
 
 ##############################################################################
 # First, we'll visualize the circuit:
 
-print(qml.draw(ideal_qnode, expansion_strategy="device")(w1, w2))
+print(qml.draw(ideal_qnode, level="device")(w1, w2))
 
 ##############################################################################
 # As expected, executing the circuit on an ideal noise-free device gives a result of ``1``.
@@ -153,8 +158,8 @@ from pennylane.transforms import mitigate_with_zne
 extrapolate = RichardsonFactory.extrapolate
 scale_factors = [1, 2, 3]
 
-mitigated_qnode = mitigate_with_zne(scale_factors, fold_global, extrapolate)(
-    noisy_qnode
+mitigated_qnode = mitigate_with_zne(
+    noisy_qnode, scale_factors, fold_global, extrapolate
 )
 mitigated_qnode(w1, w2)
 
@@ -172,22 +177,22 @@ mitigated_qnode(w1, w2)
 # introduced by Temme et al. [#temme2017error]_ and Li et al. [#li2017efficient]_.
 #
 # The ZNE method works by assuming that the amount of noise present when a circuit is run on a
-# noisy device is enumerated by a parameter :math:`\gamma`. Suppose we have an input circuit
+# noisy device is enumerated by a parameter :math:`\gamma.` Suppose we have an input circuit
 # that experiences an amount of noise :math:`\gamma = \gamma_{0}` when executed.
 # Ideally, we would like to evaluate the result of the circuit in the :math:`\gamma = 0`
 # noise-free setting.
 #
 # To do this, we create a family of equivalent circuits whose ideal noise-free value is the
 # same as our input circuit. However, when run on a noisy device, each circuit experiences
-# an amount of noise :math:`\gamma = s \gamma_{0}` for some scale factor :math:`s \ge 1`. By
+# an amount of noise :math:`\gamma = s \gamma_{0}` for some scale factor :math:`s \ge 1.` By
 # evaluating the noisy outputs of each circuit, we can extrapolate to :math:`s=0` to estimate
 # the result of running a noise-free circuit.
 #
 # A key element of ZNE is the ability to run equivalent circuits for a range of scale factors
-# :math:`s`. When the noise present in a circuit scales with the number of gates, :math:`s`
+# :math:`s.` When the noise present in a circuit scales with the number of gates, :math:`s`
 # can be varied using unitary folding [#giurgica2020digital]_.
 # Unitary folding works by noticing that any unitary :math:`V` is equivalent to
-# :math:`V V^{\dagger} V`. This type of transform can be applied to individual gates in the
+# :math:`V V^{\dagger} V.` This type of transform can be applied to individual gates in the
 # circuit or to the whole circuit.
 # Let's see how
 # folding works in code using Mitiq's
@@ -197,9 +202,12 @@ mitigated_qnode(w1, w2)
 # :class:`QuantumTape <pennylane.tape.QuantumTape>`, which provides a low-level approach for circuit
 # construction in PennyLane.
 
-with qml.tape.QuantumTape() as circuit:
-    template(w1, w2, wires=range(n_wires))
-    qml.adjoint(template)(w1, w2, wires=range(n_wires))
+circuit = qml.tape.QuantumTape(
+    [
+        template(w1, w2, wires=range(n_wires)),
+        qml.adjoint(template(w1, w2, wires=range(n_wires))),
+    ]
+)
 
 ##############################################################################
 # Don't worry, in most situations you will not need to work with a PennyLane
@@ -217,9 +225,9 @@ for s, c in zip(scale_factors, folded_circuits):
 ##############################################################################
 # Although these circuits are a bit deep, if you look carefully, you might be able to convince
 # yourself that they are all equivalent! In fact, since we have fixed our original circuit to be
-# of the form :math:`U U^{\dagger}`, we get:
+# of the form :math:`U U^{\dagger},` we get:
 #
-# - When the scale factor is :math:`s=1`, the resulting circuit is
+# - When the scale factor is :math:`s=1,` the resulting circuit is
 #
 #   .. math::
 #
@@ -227,17 +235,17 @@ for s, c in zip(scale_factors, folded_circuits):
 #
 #   Hence, the :math:`s=1` setting gives us the original unfolded circuit.
 #
-# - When :math:`s=3`, the resulting circuit is
+# - When :math:`s=3,` the resulting circuit is
 #
 #   .. math::
 #
 #       V V^{\dagger} V = U^{\dagger} U U U^{\dagger} U^{\dagger} U = \mathbb{I}.
 #
-#   In other words, we fold the whole circuit once when :math:`s=3`. Generally, whenever :math:`s`
+#   In other words, we fold the whole circuit once when :math:`s=3.` Generally, whenever :math:`s`
 #   is an odd integer, we fold :math:`(s - 1) / 2` times.
 #
 # - The :math:`s=2` setting is a bit more subtle. Now we apply folding only to the second half of
-#   the circuit, which is in our case given by :math:`U^{\dagger}`. The resulting partially-folded
+#   the circuit, which is in our case given by :math:`U^{\dagger}.` The resulting partially-folded
 #   circuit is
 #
 #   .. math::
@@ -260,10 +268,9 @@ def executor(circuits, dev=dev_noisy):
 
     # Loop through circuits and add on measurement
     for c in circuits:
-        with qml.tape.QuantumTape() as circuit_with_meas:
-            for o in c.operations:
-                qml.apply(o)
-            qml.expval(qml.PauliZ(0))
+        circuit_with_meas = qml.tape.QuantumTape(
+            c.operations, [qml.expval(qml.PauliZ(0))]
+        )
         circuits_with_meas.append(circuit_with_meas)
 
     return qml.execute(circuits_with_meas, dev, gradient_fn=None)
@@ -281,7 +288,7 @@ executor(folded_circuits, dev=dev_ideal)
 
 ##############################################################################
 # By construction, these circuits are equivalent to the original and have the same output value of
-# :math:`1`. On the other hand, each circuit has a different depth. If we expect each gate in a
+# :math:`1.` On the other hand, each circuit has a different depth. If we expect each gate in a
 # circuit to contribute an amount of noise when running on NISQ hardware, we should see the
 # result of the executed circuit degrade with increased depth. This can be confirmed using the
 # ``dev_noisy`` device
@@ -293,7 +300,7 @@ executor(folded_circuits, dev=dev_noisy)
 # mitigation: we have a family of equivalent circuits that experience a varying amount of noise
 # when executed on hardware, and we are able to control the amount of noise by varying the folding
 # scale factor :math:`s` which determines the circuit depth. The final step is to extrapolate our
-# results back to :math:`s=0`, providing us with an estimate of the noise-free result of the
+# results back to :math:`s=0,` providing us with an estimate of the noise-free result of the
 # circuit.
 #
 # Performing extrapolation is a well-studied numeric method in mathematics, and Mitiq provides
@@ -358,14 +365,9 @@ from mitiq.zne.scaling import fold_gates_at_random as folding
 
 extrapolate = RichardsonFactory.extrapolate
 
-
-@mitigate_with_zne(scale_factors, folding, extrapolate, reps_per_factor=100)
-@qml.qnode(dev_noisy)
-def mitigated_qnode(w1, w2):
-    template(w1, w2, wires=range(n_wires))
-    qml.adjoint(template)(w1, w2, wires=range(n_wires))
-    return qml.expval(qml.PauliZ(0))
-
+mitigated_qnode = mitigate_with_zne(
+    noisy_qnode, scale_factors, folding, extrapolate, reps_per_factor=100
+)
 
 mitigated_qnode(w1, w2)
 
@@ -374,10 +376,14 @@ mitigated_qnode(w1, w2)
 # keep things interesting, we've swapped out our folding function to instead perform folding on
 # randomly-selected gates. Whenever the folding function is stochastic, there will not be a unique
 # folded circuit corresponding to a given scale factor. For example, the following three distinct
-# circuits are all folded with a scale factor of :math:`s=1.1`:
+# circuits are all folded with a scale factor of :math:`s=1.1:`
 
 for _ in range(3):
-    print(qml.drawer.tape_text(folding(circuit, scale_factor=1.1), decimals=2, max_length=80))
+    print(
+        qml.drawer.tape_text(
+            folding(circuit, scale_factor=1.1), decimals=2, max_length=80
+        )
+    )
 
 ##############################################################################
 # To accommodate for this randomness, we can perform multiple repetitions of random folding for a
@@ -418,7 +424,7 @@ execute_with_zne(circuit, executor, factory=factory, scale_noise=fold_global)
 # quantum circuit that returns its expectation value. We can then vary the parameters of the
 # circuit to minimize the energy.
 #
-# To find the potential energy surface of :math:`H_{2}`, we must choose a range of interatomic
+# To find the potential energy surface of :math:`H_{2},` we must choose a range of interatomic
 # distances and calculate the qubit Hamiltonian corresponding to each distance. We then optimize the
 # variational circuit with a new set of parameters for each Hamiltonian and plot the resulting
 # energies for each distance. In this demo, we compare the potential energy surface reconstructed
@@ -429,8 +435,8 @@ execute_with_zne(circuit, executor, factory=factory, scale_noise=fold_global)
 # hardware. Suppose we want to simulate the ``ibmq_lima`` hardware device available on IBMQ. We
 # can load a noise model that represents this device using:
 
-from qiskit.test.mock import FakeLima
-from qiskit.providers.aer.noise import NoiseModel
+from qiskit_ibm_runtime.fake_provider import FakeLima
+from qiskit_aer.noise import NoiseModel
 
 backend = FakeLima()
 noise_model = NoiseModel.from_backend(backend)
@@ -446,7 +452,6 @@ dev_noisy = qml.device(
     wires=n_wires,
     noise_model=noise_model,
     optimization_level=0,
-    shots=10000,
 )
 
 ##############################################################################
@@ -459,7 +464,7 @@ params = np.load("error_mitigation/params.npy")
 
 ##############################################################################
 # These parameters can be downloaded by clicking
-# :download:`here <../demonstrations/error_mitigation/params.npy>`. We are now ready to set up the
+# :download:`here <../_static/demonstration_assets/error_mitigation/params.npy>`. We are now ready to set up the
 # variational circuit and run on the ideal and noisy devices.
 
 from pennylane import qchem
@@ -473,10 +478,13 @@ noisy_energies = []
 
 for r, phi in zip(distances, params):
     # Assume atoms lie on the Z axis
-    coordinates = np.array([0.0, 0.0, 0.0, 0.0, 0.0, r])
+    coordinates = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, r]])
 
-    # Load qubit Hamiltonian
-    H, _ = qchem.molecular_hamiltonian(symbols, coordinates)
+    # Construct Molecule object
+    molecule = qchem.Molecule(symbols, coordinates)
+
+    # Build qubit Hamiltonian
+    H, _ = qchem.molecular_hamiltonian(molecule)
 
     # Define ansatz circuit
     def qchem_circuit(phi):
@@ -487,6 +495,7 @@ for r, phi in zip(distances, params):
 
     ideal_energy = qml.QNode(qchem_circuit, dev_ideal)
     noisy_energy = qml.QNode(qchem_circuit, dev_noisy)
+    noisy_energy = qml.transforms.decompose(noisy_energy, gate_set=["RX", "RY", "RZ", "CNOT"])
 
     ideal_energies.append(ideal_energy(phi))
     noisy_energies.append(noisy_energy(phi))
@@ -499,16 +508,22 @@ mitig_energies = []
 
 for r, phi in zip(distances, params):
     # Assume atoms lie on the Z axis
-    coordinates = np.array([0.0, 0.0, 0.0, 0.0, 0.0, r])
+    coordinates = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, r]])
 
-    # Load qubit Hamiltonian
-    H, _ = qchem.molecular_hamiltonian(symbols, coordinates)
+    # Construct Molecule object
+    molecule = qchem.Molecule(symbols, coordinates)
+
+    # Build qubit Hamiltonian
+    H, _ = qchem.molecular_hamiltonian(molecule)
 
     # Define ansatz circuit
-    with qml.tape.QuantumTape() as circuit:
-        qml.PauliX(wires=0)
-        qml.PauliX(wires=1)
-        qml.DoubleExcitation(phi, wires=range(n_wires))
+    ops = [
+        qml.PauliX(0),
+        qml.PauliX(1),
+        qml.DoubleExcitation(phi, wires=range(n_wires)),
+    ]
+    circuit = qml.tape.QuantumTape(ops)
+    [circuit], _ = qml.transforms.decompose(circuit, gate_set=["RX", "RY", "RZ", "CNOT"])
 
     # Define custom executor that expands Hamiltonian measurement
     # into a linear combination of tensor products of Pauli
@@ -516,17 +531,14 @@ for r, phi in zip(distances, params):
     def executor(circuit):
 
         # Add Hamiltonian measurement to circuit
-        with qml.tape.QuantumTape() as circuit_with_meas:
-            for o in circuit.operations:
-                qml.apply(o)
-            qml.expval(H)
+        circuit_with_meas = qml.tape.QuantumTape(circuit.operations, [qml.expval(H)], shots=10000)
 
         # Expand Hamiltonian measurement into tensor product of
         # of Pauli operators. We get a list of circuits to execute
         # and a postprocessing function to combine the results into
         # a single number.
-        circuits, postproc = qml.transforms.hamiltonian_expand(
-            circuit_with_meas, group=False
+        circuits, postproc = qml.transforms.split_non_commuting(
+            circuit_with_meas, grouping_strategy=None
         )
         circuits_executed = qml.execute(circuits, dev_noisy, gradient_fn=None)
         return postproc(circuits_executed)
