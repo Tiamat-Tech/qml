@@ -2,32 +2,31 @@
     "title": "Basic arithmetic with the quantum Fourier transform (QFT)",
     "authors": [
         {
-            "id": "guillermo_alonso"
+            "username": "KetPuntoG"
         }
     ],
-    "dateOfPublication": "2022-11-07T00:00:00",
-    "dateOfLastModification": "2022-11-07T00:00:00",
+    "dateOfPublication": "2022-11-07T00:00:00+00:00",
+    "dateOfLastModification": "2024-10-07T00:00:00+00:00",
     "categories": [
-        "Getting Started"
+        "Getting Started", "Algorithms", "Quantum Computing"
     ],
     "tags": [],
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/qft_arithmetics_thumbnail.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_basic_arithmetic_QFT.png"
         }
     ],
     "seoDescription": "Learn how to use the quantum Fourier transform (QFT) to do basic arithmetic",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_qft_arithmetics",
     "references": [
         {
             "id": "Draper2000",
+            "type": "article",
             "title": "Addition on a Quantum Computer",
             "authors": "Thomas G. Draper",
-            "year": "",
+            "year": "2000",
             "journal": "",
-            "doi": "",
             "url": "https://arxiv.org/abs/quant-ph/0008033"
         }
     ],

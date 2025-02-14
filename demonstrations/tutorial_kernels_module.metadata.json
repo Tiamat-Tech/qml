@@ -2,26 +2,26 @@
     "title": "Training and evaluating quantum kernels",
     "authors": [
         {
-            "id": "peter-jan_derks"
+            "username": "pjderks"
         },
         {
-            "id": "paul_k_faehrmann"
+            "username": "pkfaehrmann"
         },
         {
-            "id": "elies_gil-fuster"
+            "username": "egfuster"
         },
         {
-            "id": "thomas_hubregtsen"
+            "username": "thubregtsen"
         },
         {
-            "id": "johannes_jakob_meyer"
+            "username": "jjmeyer"
         },
         {
-            "id": "david_wierichs"
+            "username": "dwierichs"
         }
     ],
-    "dateOfPublication": "2021-06-24T00:00:00",
-    "dateOfLastModification": "2021-11-18T00:00:00",
+    "dateOfPublication": "2021-06-24T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
     "categories": [
         "Quantum Machine Learning"
     ],
@@ -29,29 +29,28 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/QEK_thumbnail.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_training_and_evaluating_quantum_kernels.png"
         }
     ],
     "seoDescription": "Kernels and alignment training with Pennylane.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_kernels_module",
     "references": [
         {
             "id": "Training_QEKs",
+            "type": "article",
             "title": "Training Quantum Embedding Kernels on Near-Term Quantum Computers.",
             "authors": "Thomas Hubregtsen, David Wierichs, Elies Gil-Fuster, Peter-Jan H. S. Derks, Paul K. Faehrmann, and Johannes Jakob Meyer",
             "year": "2021",
             "journal": "",
-            "doi": "",
             "url": "https://arxiv.org/abs/2105.02276"
         },
         {
             "id": "Alignment",
+            "type": "article",
             "title": "An overview of kernel alignment and its applications.",
             "authors": "Wang, Tinghua, Dongyan Zhao, and Shengfeng Tian",
             "year": "2015",
             "journal": "Artificial Intelligence Review",
-            "doi": "",
             "url": "https://link.springer.com/article/10.1007/s10462-012-9369-4"
         }
     ],

@@ -2,11 +2,11 @@
     "title": "Quantum circuit structure learning",
     "authors": [
         {
-            "id": "angus_lowe"
+            "username": "alowe"
         }
     ],
-    "dateOfPublication": "2019-10-16T00:00:00",
-    "dateOfLastModification": "2021-01-20T00:00:00",
+    "dateOfPublication": "2019-10-16T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
     "categories": [
         "Optimization"
     ],
@@ -14,24 +14,23 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/rotoselect_structure.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_quantum_circuit_structure_learning.png"
         }
     ],
     "seoDescription": "Applying the Rotoselect optimization algorithm to find the minimum in a variational quantum algorithm.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_rotoselect",
     "references": [
         {
-            "id": "",
+            "id": "Ostaszewski2019",
+            "type": "article",
             "title": "Quantum circuit structure learning.",
             "authors": "Mateusz Ostaszewski, Edward Grant, Marcello Bendetti",
             "year": "2019",
             "journal": "",
-            "doi": "",
             "url": "https://arxiv.org/abs/1905.09692"
         }
     ],
-    "basedOnPapers": [],
+    "basedOnPapers": ["10.48550/arXiv.1905.09692"],
     "referencedByPapers": [],
     "relatedContent": [
         {

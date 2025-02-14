@@ -4,7 +4,7 @@ Quantum advantage in learning from experiments
 
 .. meta::
     :property="og:description": Learn how quantum memory can boost quantum machine learning algorithms
-    :property="og:image": https://pennylane.ai/qml/_images/learning_from_exp_thumbnail.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/learning_from_exp_thumbnail.png
 
 *Author: Joseph Bowles — Posted: 18 April 2022. Last updated: 30 June 2022.*
 
@@ -27,20 +27,20 @@ The learning task
 The learning task we focus on involves deciding if a unitary is
 time-reversal symmetric (we’ll call them T-symmetric) or not.
 Mathematically, time-reversal symmetry in quantum mechanics involves
-reversing the sense of :math:`i` so that :math:`i \rightarrow -i`.
+reversing the sense of :math:`i` so that :math:`i \rightarrow -i.`
 Hence, a unitary :math:`U` is T-symmetric if
 
 .. math:: U^*=U.
 
 Now for the learning task. Let’s say we have a bunch of quantum circuits
-:math:`U_1, \cdots, U_n`, some of which are T-symmetric and some not,
+:math:`U_1, \cdots, U_n,` some of which are T-symmetric and some not,
 but we are not told which ones are which.
 
 """
 
 
 ##############################################################################
-# .. figure:: ../demonstrations/learning_from_experiments/fig1b.png
+# .. figure:: ../_static/demonstration_assets/learning_from_experiments/fig1b.png
 #    :align: center
 #    :width: 50%
 
@@ -68,7 +68,7 @@ n_shots = 100  # the number of times we can use each unitary
 # To tackle this task we consider experiments with and without quantum
 # memory. We also assume that we have access to a single physical
 # realization of each unitary; in other words, we do not have multiple
-# copies of the devices that implement :math:`U_i`.
+# copies of the devices that implement :math:`U_i.`
 #
 # An experiment without quantum memory can therefore only make use of a
 # single query to :math:`U_i` in each circuit, since querying :math:`U_i`
@@ -87,7 +87,7 @@ n_shots = 100  # the number of times we can use each unitary
 #
 
 ##############################################################################
-# .. figure:: ../demonstrations/learning_from_experiments/experiments.png
+# .. figure:: ../_static/demonstration_assets/learning_from_experiments/experiments.png
 #    :align: center
 #    :width: 60%
 
@@ -102,7 +102,7 @@ n_shots = 100  # the number of times we can use each unitary
 # First, we will try to solve the task with a conventional experiment. Our
 # strategy will be as follows:
 #
-# -  For each :math:`U_i`, we prepare ``n_shots`` copies of the state
+# -  For each :math:`U_i,` we prepare ``n_shots`` copies of the state
 #    :math:`U_i\vert0\rangle` and measure each state to generate
 #    classical measurement data.
 # -  Use an unsupervised classical machine learning algorithm (kernel
@@ -115,7 +115,7 @@ n_shots = 100  # the number of times we can use each unitary
 
 
 ##############################################################################
-# .. figure:: ../demonstrations/learning_from_experiments/fig2b.png
+# .. figure:: ../_static/demonstration_assets/learning_from_experiments/fig2b.png
 #    :align: center
 #    :width: 70%
 
@@ -135,10 +135,10 @@ n_shots = 100  # the number of times we can use each unitary
 # .. math:: E_i^*=\langle 0\vert (U^{\dagger})^*(\sigma_y^{(i)})^* (U)^* \vert 0 \rangle = - \langle 0\vert U^{\dagger}\sigma_y^{(i)} U \vert 0 \rangle = - E_i.
 #
 # Since :math:`E_i` is a real number, the only solution to this is
-# :math:`E_i=0`, which implies that all local expectations values are 0
+# :math:`E_i=0,` which implies that all local expectations values are 0
 # for this class.
 #
-# For general unitaries it is not the case that :math:`E_i=0`, and so it
+# For general unitaries it is not the case that :math:`E_i=0,` and so it
 # seems as though this will allow us to discriminate the two classes of
 # circuits easily. However, for general random unitaries the local
 # expectation values approach zero exponentially with the number of
@@ -163,7 +163,7 @@ n_shots = 100  # the number of times we can use each unitary
 
 import pennylane as qml
 from pennylane.templates.layers import RandomLayers
-from pennylane import numpy as np
+import numpy as np
 
 np.random.seed(234087)
 
@@ -175,7 +175,7 @@ def generate_circuit(shots):
     generate a random circuit that returns a number of measuement samples
     given by shots
     """
-    dev = qml.device("default.qubit", wires=qubits, shots=shots)
+    dev = qml.device("lightning.qubit", wires=qubits, shots=shots)
 
     @qml.qnode(dev)
     def circuit(ts=False):
@@ -327,7 +327,7 @@ plt.show()
 
 
 ##############################################################################
-# .. figure:: ../demonstrations/learning_from_experiments/fig3b.png
+# .. figure:: ../_static/demonstration_assets/learning_from_experiments/fig3b.png
 #    :align: center
 #    :width: 70%
 
@@ -343,7 +343,13 @@ plt.show()
 n_shots = 50
 qubits = 8
 
-dev = qml.device("default.qubit", wires=qubits * 2, shots=n_shots)
+dev = qml.device("lightning.qubit", wires=qubits * 2, shots=n_shots)
+
+
+def CNOT_sequence(control_wires, target_wires):
+    """Apply CNOTs in sequence using the provided control and target wires"""
+    for c_wire, t_wire in zip(control_wires, target_wires):
+        qml.CNOT([c_wire, t_wire])
 
 
 @qml.qnode(dev)
@@ -361,14 +367,10 @@ def enhanced_circuit(ts=False):
     for q in range(qubits):
         qml.Hadamard(wires=q)
 
-    qml.broadcast(
-        qml.CNOT, pattern=[[q, qubits + q] for q in range(qubits)], wires=range(qubits * 2)
-    )
+    CNOT_sequence(control_wires=range(qubits), target_wires=range(qubits, 2 * qubits))
     RandomLayers(weights, wires=range(0, qubits), rotations=ops, seed=seed)
     RandomLayers(weights, wires=range(qubits, 2 * qubits), rotations=ops, seed=seed)
-    qml.broadcast(
-        qml.CNOT, pattern=[[q, qubits + q] for q in range(qubits)], wires=range(qubits * 2)
-    )
+    CNOT_sequence(control_wires=range(qubits), target_wires=range(qubits, 2 * qubits))
 
     for q in range(qubits):
         qml.Hadamard(wires=q)
@@ -413,13 +415,13 @@ plt.show()
 # Kernel PCA has perfectly separated the two classes! In fact, all the
 # T-symmetric unitaries have been mapped to the same point. This is
 # because the circuit is actually equivalent to performing
-# :math:`U^TU\otimes \mathbb{I}\vert 0 \rangle`, which for T-symmetric
+# :math:`U^TU\otimes \mathbb{I}\vert 0 \rangle,` which for T-symmetric
 # unitaries is just the identity operation.
 #
 # To see this, note that the Hadamard and CNOT gates before
 # :math:`U_i\otimes U_i` map the :math:`\vert0\rangle` state to the
 # maximally entanged state
-# :math:`\vert \Phi^+\rangle = \frac{1}{\sqrt{2}}(\vert 00...0\rangle+ \vert11...1\rangle`,
+# :math:`\vert \Phi^+\rangle = \frac{1}{\sqrt{2}}(\vert 00...0\rangle+ \vert11...1\rangle,`
 # and the gates after :math:`U_i\otimes U_i` are just the inverse
 # transformation. The probability that all measurement outcomes give the
 # result :math:`+1` is therefore.
@@ -427,12 +429,12 @@ plt.show()
 # .. math:: p(11\cdots 1) = \langle \Phi^+ \vert U_i \otimes U_i \vert\Phi^+ \rangle.
 #
 # A well known fact about the maximally entanged state is that
-# :math:`U\otimes \mathbb{I}\vert\Phi^+\rangle= \mathbb{I}\otimes U^T\vert\Phi^+\rangle`.
+# :math:`U\otimes \mathbb{I}\vert\Phi^+\rangle= \mathbb{I}\otimes U^T\vert\Phi^+\rangle.`
 # The probabilty is therefore
 #
 # .. math:: p(11\cdots 1) = \langle \Phi^+ \vert U_i^T U_i \otimes \mathbb{I} \vert\Phi^+ \rangle.
 #
-# For T-symmetric unitaries :math:`U_i^T=U_i^\dagger`, so this probability
+# For T-symmetric unitaries :math:`U_i^T=U_i^\dagger,` so this probability
 # is equal to one: the :math:`11\cdots 1` outcome is always obtained.
 #
 # If we look at the raw measurement data for the T-symmetric unitaries:
@@ -479,15 +481,11 @@ def enhanced_circuit(ts=False):
     for q in range(qubits):
         qml.Hadamard(wires=q)
 
-    qml.broadcast(
-        qml.CNOT, pattern=[[q, qubits + q] for q in range(qubits)], wires=range(qubits * 2)
-    )
+    CNOT_sequence(control_wires=range(qubits), target_wires=range(qubits, 2 * qubits))
     RandomLayers(weights, wires=range(0, qubits), rotations=ops, seed=seed)
     RandomLayers(weights, wires=range(qubits, 2 * qubits), rotations=ops, seed=seed)
     noise_layer(np.pi / 4)  # added noise layer
-    qml.broadcast(
-        qml.CNOT, pattern=[[qubits + q, q] for q in range(qubits)], wires=range(qubits * 2)
-    )
+    CNOT_sequence(control_wires=range(qubits, 2 * qubits), target_wires=range(qubits))
 
     for q in range(qubits):
         qml.Hadamard(wires=qubits + q)
@@ -541,4 +539,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/joseph_bowles.txt
+#

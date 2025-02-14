@@ -4,7 +4,7 @@ Perturbative Gadgets for Variational Quantum Algorithms
 
 .. meta::
    :property="og:description": Use perturbative gadgets to avoid cost-function-dependent barren plateaus
-   :property="og:image": https://pennylane.ai/qml/_images/thumbnail_tutorial_barren_gadgets.svg
+   :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/thumbnail_tutorial_barren_gadgets.png
 
 
 .. related::
@@ -89,13 +89,13 @@ Pauli words acting on :math:`k` qubits each:
 
 .. math:: H^\text{target} = \sum_i c_i h_i,
 
-where :math:`h_i = \sigma_{i,1} \otimes \sigma_{i,2} \otimes \ldots \otimes \sigma_{i,k}`,
-:math:`\sigma_{i,j} \in \{ X, Y, Z \}`, and :math:`c_i \in \mathbb{R}`.  
+where :math:`h_i = \sigma_{i,1} \otimes \sigma_{i,2} \otimes \ldots \otimes \sigma_{i,k},`
+:math:`\sigma_{i,j} \in \{ X, Y, Z \},` and :math:`c_i \in \mathbb{R}.`  
 Now we construct the gadget Hamiltonian.
-For each term :math:`h_i`, we will need :math:`k` additional qubits, which we
+For each term :math:`h_i,` we will need :math:`k` additional qubits, which we
 call auxiliary qubits, and to add two terms to the Hamiltonian:
 an "unperturbed" part :math:`H^\text{aux}_i` and a perturbation :math:`V_i` 
-of strength :math:`\lambda`. 
+of strength :math:`\lambda.` 
 The unperturbed part penalizes each of the newly added qubits for not being in 
 the :math:`|0\rangle` state
 
@@ -117,11 +117,11 @@ To grasp this idea better, this is what would result from working with a Hamilto
 acting on a total of :math:`8` qubits and having :math:`3` terms, each of them being a
 :math:`4`-body interaction. 
 
-.. figure:: ../demonstrations/barren_gadgets/gadget-terms-tutorial.png
+.. figure:: ../_static/demonstration_assets/barren_gadgets/gadget-terms-tutorial.png
     :align: center
     :width: 90%
 
-For each of the terms :math:`h_1`, :math:`h_2`, and :math:`h_3` we add :math:`4` auxiliary qubits.
+For each of the terms :math:`h_1`, :math:`h_2,` and :math:`h_3` we add :math:`4` auxiliary qubits.
 In the end, our gadget Hamiltonian acts on :math:`8+3\cdot 4 = 20` qubits.
 
 The penalization (red) acts only on the auxiliary registers, penalizing each 
@@ -131,7 +131,7 @@ As shown in Ref. [#cichy2022]_, this construction results in a spectrum that, fo
 to that of the original Hamiltonian. 
 This means that by minimizing the gadget Hamiltonian and reaching its global
 minimum, the resulting state will be close to the global minimum of 
-:math:`H^\text{target}`.
+:math:`H^\text{target}.`
 
 Since it is a local cost function, it is better behaved with respect to 
 barren plateaus than the global cost function, making it more trainable.
@@ -147,10 +147,10 @@ and using that for training instead. That is what we will do in the rest of this
 # from a user-given target Hamiltonian in an automated way. 
 # For those who want to check its inner workings,
 # you can find the code here:
-# :download:`barren_gadgets.py </demonstrations/barren_gadgets/barren_gadgets.py>`.
+# :download:`barren_gadgets.py </_static/demonstration_assets/barren_gadgets/barren_gadgets.py>`.
 # The functions ``get_parameter_shape``, ``generate_random_gate_sequence``, and
 # ``build_ansatz`` (for the details:
-# :download:`layered_ansatz.py <../demonstrations/barren_gadgets/layered_ansatz.py>` 
+# :download:`layered_ansatz.py <../_static/demonstration_assets/barren_gadgets/layered_ansatz.py>` 
 # ) are there to build the parameterized quantum circuit we use in this demo.
 # The first computes the shape of the array of trainable parameters that the 
 # circuit will need. The second generates a random sequence of Pauli rotations
@@ -202,7 +202,7 @@ print(H_target)
 
 gadgetizer = PerturbativeGadgets()
 H_gadget = gadgetizer.gadgetize(H_target)
-print(H_gadget)
+H_gadget
 
 ##############################################################################
 # So, let's see what we got.
@@ -213,7 +213,7 @@ print(H_gadget)
 # recognize the 8 Paulis from the target Hamiltonian on the qubits ``0`` to 
 # ``3`` and the cyclic pairwise :math:`X` structure on the auxiliaries.
 # Indeed, they are :math:`(X_4X_5, X_5X_6, X_6X_7, X_7X_4)` and
-# :math:`(X_8X_9, X_9X_{10}, X_{10}X_{11}, X_{11}X_8)`.
+# :math:`(X_8X_9, X_9X_{10}, X_{10}X_{11}, X_{11}X_8).`
 
 ##############################################################################
 # Training with the gadget Hamiltonian
@@ -387,5 +387,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/simon_cichy.txt
 #

@@ -1,15 +1,15 @@
 {
-    "title": "Classically-Boosted Variational Quantum Eigensolver",
+    "title": "Classically-boosted variational quantum eigensolver",
     "authors": [
         {
-            "id": "joana_fraxanet"
+            "username": "jfraxanet"
         },
         {
-            "id": "isidor_schoch"
+            "username": "ischoch"
         }
     ],
-    "dateOfPublication": "2022-10-31T00:00:00",
-    "dateOfLastModification": "2022-10-31T00:00:00",
+    "dateOfPublication": "2022-10-31T00:00:00+00:00",
+    "dateOfLastModification": "2024-12-13T00:00:00+00:00",
     "categories": [
         "Quantum Chemistry"
     ],
@@ -17,15 +17,15 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/CB_VQE.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_classically-boosted_VQE.png"
         }
     ],
     "seoDescription": "Learn how to implement classically-boosted VQE in PennyLane.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_classically_boosted_vqe",
     "references": [
         {
             "id": "Radin2021",
+            "type": "article",
             "title": "Classically-Boosted Variational Quantum Eigensolver",
             "authors": "M. D. Radin",
             "year": "2021",

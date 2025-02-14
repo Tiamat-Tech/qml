@@ -2,11 +2,11 @@
     "title": "Quantum GANs",
     "authors": [
         {
-            "id": "james_ellis"
+            "username": "jellis"
         }
     ],
-    "dateOfPublication": "2022-02-01T00:00:00",
-    "dateOfLastModification": "2022-01-27T00:00:00",
+    "dateOfPublication": "2022-02-01T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
     "categories": [
         "Quantum Machine Learning"
     ],
@@ -14,29 +14,28 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/patch.jpeg"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_quantum_GANs.png"
         }
     ],
     "seoDescription": "Explore quantum GANs to generate hand-written digits of zero",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_quantum_gans",
     "references": [
         {
             "id": "goodfellow2014",
+            "type": "article",
             "title": "Generative Adversarial Networks",
             "authors": "Ian J. Goodfellow et al.",
             "year": "2014",
             "journal": "",
-            "doi": "",
             "url": "https://arxiv.org/abs/1406.2661"
         },
         {
             "id": "huang2020",
+            "type": "article",
             "title": "Experimental Quantum Generative Adversarial Networks for Image Generation",
             "authors": "He-Liang Huang et al.",
             "year": "2020",
             "journal": "",
-            "doi": "",
             "url": "https://arxiv.org/abs/2010.06201"
         }
     ],
@@ -48,5 +47,6 @@
             "id": "tutorial_QGAN",
             "weight": 1.0
         }
-    ]
+    ],
+    "discussionForumUrl": "https://discuss.pennylane.ai/t/questions-on-qgan-tutorial/2607"
 }

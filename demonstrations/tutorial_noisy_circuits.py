@@ -5,7 +5,7 @@ Noisy circuits
 
 .. meta::
     :property="og:description": Learn how to simulate noisy quantum circuits
-    :property="og:image": https://pennylane.ai/qml/_images/N-Nisq.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/N-Nisq.png
 
 .. related::
 
@@ -22,7 +22,7 @@ to employ channel gradients to optimize noise parameters in a circuit.
 
 We're putting the N in NISQ.
 
-.. figure:: ../demonstrations/noisy_circuits/N-Nisq.png
+.. figure:: ../_static/demonstration_assets/noisy_circuits/N-Nisq.png
     :align: center
     :width: 20%
 
@@ -39,10 +39,10 @@ We're putting the N in NISQ.
 # * **Coherent noise** is described by unitary operations that maintain the purity of the
 #   output quantum state. A common source are systematic errors originating from
 #   imperfectly-calibrated devices that do not exactly apply the desired gates, e.g., applying
-#   a rotation by an angle :math:`\phi+\epsilon` instead of :math:`\phi`.
+#   a rotation by an angle :math:`\phi+\epsilon` instead of :math:`\phi.`
 #
 # * **Incoherent noise** is more problematic: it originates from a quantum computer
-#   becoming entangled with the environment, resulting in mixed states --- probability
+#   becoming entangled with the environment, resulting in mixed states — probability
 #   distributions over different pure states. Incoherent noise thus leads to outputs that are
 #   always random, regardless of what basis we measure in.
 #
@@ -56,14 +56,18 @@ We're putting the N in NISQ.
 # The purpose of PennyLane's ``default.mixed`` device is to provide native
 # support for mixed states and for simulating noisy computations. Let's use ``default.mixed`` to
 # simulate a simple circuit for preparing the
-# Bell state :math:`|\psi\rangle=\frac{1}{\sqrt{2}}(|00\rangle+|11\rangle)`. We ask the QNode to
-# return the expectation value of :math:`Z_0\otimes Z_1`:
+# Bell state :math:`|\psi\rangle=\frac{1}{\sqrt{2}}(|00\rangle+|11\rangle).` We ask the QNode to
+# return the expectation value of :math:`Z_0\otimes Z_1:`
 #
 import pennylane as qml
-from pennylane import numpy as np
+from jax import numpy as np
+import jax
+import jaxopt
+
+jax.config.update("jax_platform_name", "cpu")
+jax.config.update('jax_enable_x64', True)
 
 dev = qml.device('default.mixed', wires=2)
-
 
 @qml.qnode(dev)
 def circuit():
@@ -75,12 +79,18 @@ def circuit():
 print(f"QNode output = {circuit():.4f}")
 
 ######################################################################
-# The device stores the output state as a density matrix. In this case, the density matrix is
-# equal to :math:`|\psi\rangle\langle\psi|`,
-# where :math:`|\psi\rangle=\frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)`.
+# With a small modification of the circuit we can also ask for the density matrix. In this case, the density matrix is
+# equal to :math:`|\psi\rangle\langle\psi|,`
+# where :math:`|\psi\rangle=\frac{1}{\sqrt{2}}(|00\rangle + |11\rangle).`
 
+@qml.qnode(dev)
+def density_matrix_circuit():
+    qml.Hadamard(wires=0)
+    qml.CNOT(wires=[0, 1])
+    return qml.state()
 
-print(f"Output state is = \n{np.real(dev.state)}")
+matrix = density_matrix_circuit()
+print(f"Output density matrix is = \n{np.real(matrix)}")
 
 ######################################################################
 # Incoherent noise is modelled by
@@ -90,7 +100,7 @@ print(f"Output state is = \n{np.real(dev.state)}")
 # quantum channels is to employ `Kraus operators
 # <https://en.wikipedia.org/wiki/Quantum_operation#Kraus_operators>`__
 # :math:`\{K_i\}` satisfying the condition
-# :math:`\sum_i K_{i}^{\dagger} K_i = I`. For an initial state :math:`\rho`, the output
+# :math:`\sum_i K_{i}^{\dagger} K_i = I.` For an initial state :math:`\rho,` the output
 # state after the action of a channel :math:`\Phi` is:
 #
 # .. math::
@@ -100,8 +110,8 @@ print(f"Output state is = \n{np.real(dev.state)}")
 # Just like pure states are special cases of mixed states, unitary
 # transformations are special cases of quantum channels. Unitary transformations are represented
 # by a single Kraus operator,
-# the unitary :math:`U`, and they transform a state as
-# :math:`U\rho U^\dagger`.
+# the unitary :math:`U,` and they transform a state as
+# :math:`U\rho U^\dagger.`
 #
 # More generally, the action of a quantum channel can be interpreted as applying a
 # transformation corresponding to the Kraus operator :math:`K_i` with some associated
@@ -113,7 +123,7 @@ print(f"Output state is = \n{np.real(dev.state)}")
 # transformations on a quantum state. For
 # example, consider the bit flip channel. It describes a transformation that flips the state of
 # a qubit (applies an X gate) with probability :math:`p` and leaves it unchanged with probability
-# :math:`1-p`. Its Kraus operators are
+# :math:`1-p.` Its Kraus operators are
 #
 # .. math::
 #
@@ -256,17 +266,14 @@ def cost(x, target):
 # All that remains is to optimize the parameter. We use a straightforward gradient descent
 # method.
 
-
-opt = qml.GradientDescentOptimizer(stepsize=10)
 steps = 35
-x = np.tensor(0.01, requires_grad=True)
 
-for i in range(steps):
-    (x, ev), cost_val = opt.step_and_cost(cost, x, ev)
-    if i % 5 == 0 or i == steps - 1:
-        print(f"Step: {i}    Cost: {cost_val}")
+gd = jaxopt.GradientDescent(cost, maxiter=steps, tol=1e-5)
 
-print(f"QNode output after optimization = {damping_circuit(x):.4f}")
+x = np.array(0.01)
+res = gd.run(x, ev)
+
+print(f"QNode output after optimization = {damping_circuit(res.params):.4f}")
 print(f"Experimental expectation value = {ev}")
 print(f"Optimized noise parameter p = {sigmoid(x.take(0)):.4f}")
 
@@ -291,4 +298,3 @@ print(f"Optimized noise parameter p = {sigmoid(x.take(0)):.4f}")
 # About the author
 # ----------------
 #
-# .. include:: ../_static/authors/juan_miguel_arrazola.txt

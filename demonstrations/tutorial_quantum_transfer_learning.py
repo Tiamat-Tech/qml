@@ -7,7 +7,7 @@ Quantum transfer learning
 .. meta::
     :property="og:description": Combine PyTorch and PennyLane to train a hybrid quantum-classical image
         classifier using transfer learning.
-    :property="og:image": https://pennylane.ai/qml/_images/transfer_images.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/transfer_images.png
 
 *Author: Andrea Mari — Posted: 19 December 2019. Last updated: 28 January 2021.*
 
@@ -31,12 +31,12 @@ given problem, then, with just a bit of additional training, it can be used to a
 but related problem.
 
 As discussed in Ref. [1], this idea can be formalized in terms of two abstract networks :math:`A`
-and :math:`B`, independently from their quantum or classical physical nature.
+and :math:`B,` independently from their quantum or classical physical nature.
 
 |
 
 
-.. figure:: ../demonstrations/quantum_transfer_learning/transfer_learning_general.png
+.. figure:: ../_static/demonstration_assets/quantum_transfer_learning/transfer_learning_general.png
    :scale: 45%
    :alt: transfer_general
    :align: center
@@ -47,18 +47,18 @@ As sketched in the above figure, one can give the following **general definition
 transfer learning method**:
 
 1. Take a network :math:`A` that has been pre-trained on a dataset :math:`D_A` and for a given
-   task :math:`T_A`.
+   task :math:`T_A.`
 
 2. Remove some of the final layers. In this way, the resulting truncated network :math:`A'`
    can be used as a feature extractor.
 
-3. Connect a new trainable network :math:`B` at the end of the pre-trained network :math:`A'`.
+3. Connect a new trainable network :math:`B` at the end of the pre-trained network :math:`A'.`
 
 4. Keep the weights of :math:`A'` constant, and train the final block :math:`B` with a
-   new dataset :math:`D_B` and/or for a new task of interest :math:`T_B`.
+   new dataset :math:`D_B` and/or for a new task of interest :math:`T_B.`
 
 When dealing with hybrid systems, depending on the physical nature (classical or quantum) of the
-networks :math:`A` and :math:`B`, one can have different implementations of transfer learning as
+networks :math:`A` and :math:`B,` one can have different implementations of transfer learning as
 
 summarized in following table:
 
@@ -86,10 +86,10 @@ We focus on the CQ transfer learning scheme discussed in the previous section an
 1. As pre-trained network :math:`A` we use **ResNet18**, a deep residual neural network introduced by
    Microsoft in Ref. [3], which is pre-trained on the *ImageNet* dataset.
 
-2. After removing its final layer we obtain :math:`A'`, a pre-processing block which maps any
+2. After removing its final layer we obtain :math:`A',` a pre-processing block which maps any
    input high-resolution image into 512 abstract features.
 
-3. Such features are classified by a 4-qubit "dressed quantum circuit" :math:`B`, i.e., a
+3. Such features are classified by a 4-qubit "dressed quantum circuit" :math:`B,` i.e., a
    variational quantum circuit sandwiched between two classical layers.
 
 4. The hybrid model is trained, keeping :math:`A'` constant, on the *Hymenoptera* dataset
@@ -97,7 +97,7 @@ We focus on the CQ transfer learning scheme discussed in the previous section an
 
 A graphical representation of the full data processing pipeline is given in the figure below.
 
-.. figure:: ../demonstrations/quantum_transfer_learning/transfer_learning_c2q.png
+.. figure:: ../_static/demonstration_assets/quantum_transfer_learning/transfer_learning_c2q.png
    :scale: 55%
    :alt: transfer_c2q
    :align: center
@@ -307,7 +307,7 @@ def entangling_layer(nqubits):
 #   additional post-processing.
 
 
-@qml.qnode(dev, interface="torch")
+@qml.qnode(dev)
 def quantum_net(q_input_features, q_weights_flat):
     """
     The variational quantum circuit.
@@ -402,7 +402,9 @@ class DressedQuantumNet(nn.Module):
 # .. note::
 #   The *ResNet18* model is automatically downloaded by PyTorch and it may take several minutes (only the first time).
 #
-model_hybrid = torchvision.models.resnet18(pretrained=True)
+
+weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1
+model_hybrid = torchvision.models.resnet18(weights=weights)
 
 for param in model_hybrid.parameters():
     param.requires_grad = False
@@ -607,4 +609,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/andrea_mari.txt
+#

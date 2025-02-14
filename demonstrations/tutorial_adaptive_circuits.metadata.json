@@ -2,11 +2,11 @@
     "title": "Adaptive circuits for quantum chemistry",
     "authors": [
         {
-            "id": "soran_jahangiri"
+            "username": "soran"
         }
     ],
-    "dateOfPublication": "2021-09-13T00:00:00",
-    "dateOfLastModification": "2021-09-13T00:00:00",
+    "dateOfPublication": "2021-09-13T00:00:00+00:00",
+    "dateOfLastModification": "2024-12-13T00:00:00+00:00",
     "categories": [
         "Quantum Chemistry"
     ],
@@ -14,19 +14,19 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/adapt_thumbnail.png"
+            "uri": "/_static/demonstration_assets/adaptive_circuits/thumbnail_adaptive_circuits.png"
         },
         {
-            "type": "hero_image",
-            "uri": "/_static/hero_illustrations/thumbnail_large_adaptive_circuits_new.png"
+            "type": "large_thumbnail",
+            "uri": "/_static/demo_thumbnails/large_demo_thumbnails/thumbnail_large_adaptive_circuits_new.png"
         }
     ],
     "seoDescription": "Learn how to build quantum chemistry circuits adaptively.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_adaptive_circuits",
     "references": [
         {
             "id": "peruzzo2014",
+            "type": "article",
             "title": "A variational eigenvalue solver on a photonic quantum processor",
             "authors": "Alberto Peruzzo, Jarrod McClean, et al.",
             "year": "2014",
@@ -36,6 +36,7 @@
         },
         {
             "id": "yudong2019",
+            "type": "article",
             "title": "Quantum Chemistry in the Age of Quantum Computing",
             "authors": "Yudong Cao, Jonathan Romero, et al.",
             "year": "2019",
@@ -45,6 +46,7 @@
         },
         {
             "id": "romero2017",
+            "type": "article",
             "title": "Strategies for quantum computing molecular energies using the unitary coupled cluster ansatz",
             "authors": "J. Romero, R. Babbush, et al.",
             "doi": "10.48550/arXiv.1701.02691",
@@ -52,15 +54,16 @@
         },
         {
             "id": "givenstutorial",
-            "title": "",
-            "authors": "",
-            "year": "",
+            "type": "article",
+            "title": "Givens rotations for quantum chemistry",
+            "authors": "Juan Miguel Arrazola",
+            "year": "2021",
             "journal": "",
-            "doi": "",
             "url": "https://pennylane.ai/qml/demos/tutorial_givens_rotations.html"
         },
         {
             "id": "grimsley2019",
+            "type": "article",
             "title": "An adaptive variational algorithm for exact molecular simulations on a quantum computer",
             "authors": "Harper R. Grimsley, Sophia E. Economou, Edwin Barnes, Nicholas J. Mayhall",
             "year": "2019",
@@ -69,7 +72,7 @@
             "url": "https://www.nature.com/articles/s41467-019-10988-2"
         }
     ],
-    "basedOnPapers": [],
+    "basedOnPapers": ["10.1038/s41467-019-10988-2"],
     "referencedByPapers": [],
     "relatedContent": [
         {

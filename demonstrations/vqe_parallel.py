@@ -1,3 +1,4 @@
+
 # coding=utf-8
 r"""
 VQE with parallel QPUs with Rigetti
@@ -6,21 +7,23 @@ VQE with parallel QPUs with Rigetti
 .. meta::
     :property="og:description": Using parallel QPUs to
         speed up the calculation of the potential energy surface of molecular Hamiltonian.
-    :property="og:image": https://pennylane.ai/qml/_images/vqe_diagram.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/vqe_diagram.png
 
 .. related::
 
    tutorial_vqe A brief overview of VQE
 
-*Author: Tom Bromley — Posted: 14 February 2020. Last updated: 9 November 2022.*
+*Author: Tom Bromley — Posted: 14 February 2020. Last updated: 29 August 2023.*
+
+.. warning::
+    This demo requires Python <=3.10 and uses the PennyLane-Rigetti plugin, which is only compatible with PennyLane v0.40 or below. To run this demo with newer versions of PennyLane, you will need to use `a different simulator device <https://pennylane.ai/plugins>`__.
 
 This tutorial showcases how using asynchronously-evaluated parallel QPUs can speed up the
 calculation of the potential energy surface of molecular hydrogen (:math:`H_2`).
 
 Using a VQE setup, we task two devices from the
 `PennyLane-Rigetti <https://docs.pennylane.ai/projects/rigetti/en/latest/>`__ plugin with evaluating
-
-separate terms in the qubit Hamiltonian of :math:`H_2`. As these devices are allowed to operate
+separate terms in the qubit Hamiltonian of :math:`H_2.` As these devices are allowed to operate
 asynchronously, i.e., at the same time and without having to wait for each other,
 the calculation can be performed in roughly half the time.
 
@@ -52,79 +55,58 @@ from pennylane import qchem
 # hydrogen. This is achieved by finding the ground state energy of :math:`H_{2}` as we increase
 # the bond length between the hydrogen atoms.
 #
-# Each inter-atomic distance results in a different qubit Hamiltonian. To find the corresponding
-# Hamiltonian, we use the :func:`~.pennylane.qchem.molecular_hamiltonian` function of the
-# :mod:`~.pennylane.qchem` package. Further details on the mapping from the electronic
-# Hamiltonian of a molecule to a qubit Hamiltonian can be found in the
+# Each inter-atomic distance results in a different qubit Hamiltonian. Further
+# details on the mapping from the electronic Hamiltonian of a molecule to a
+# qubit Hamiltonian can be found in the
 # :doc:`tutorial_quantum_chemistry` and :doc:`tutorial_vqe`
 # tutorials.
 #
-# We begin by creating a dictionary containing a selection of bond lengths and corresponding data
-# files saved in `XYZ <https://en.wikipedia.org/wiki/XYZ_file_format>`__ format. These files
-# follow a standard format for specifying the geometry of a molecule and can be downloaded as a
-# Zip from :download:`here <../demonstrations/vqe_parallel/vqe_parallel.zip>`.
+# We begin by downloading a selection of datasets of :math:`H_2` molecule for
+# various bond lengths using the
+# `PennyLane Datasets library <https://pennylane.ai/datasets/qchem/h2-molecule>`__:
 
-data = {  # keys: atomic separations (in Angstroms), values: corresponding files
-    0.3: "vqe_parallel/h2_0.30.xyz",
-    0.5: "vqe_parallel/h2_0.50.xyz",
-    0.7: "vqe_parallel/h2_0.70.xyz",
-    0.9: "vqe_parallel/h2_0.90.xyz",
-    1.1: "vqe_parallel/h2_1.10.xyz",
-    1.3: "vqe_parallel/h2_1.30.xyz",
-    1.5: "vqe_parallel/h2_1.50.xyz",
-    1.7: "vqe_parallel/h2_1.70.xyz",
-    1.9: "vqe_parallel/h2_1.90.xyz",
-    2.1: "vqe_parallel/h2_2.10.xyz",
-}
+bonds = [0.5, 0.58, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7, 1.9, 2.1]
+datasets = qml.data.load("qchem", molname="H2", bondlength=bonds, basis="STO-3G")
 
 ##############################################################################
-# The next step is to create the qubit Hamiltonians for each value of the inter-atomic distance.
-# We do this by first reading the molecular geometry from the external file using the
-# :func:`~.pennylane.qchem.read_structure` function and passing the atomic symbols
-# and coordinates to :func:`~.pennylane.qchem.molecular_hamiltonian`.
+# We can now extract the qubit Hamiltonians from these datasets for each bond length:
 
-
-hamiltonians = []
-
-for separation, file in data.items():
-    symbols, coordinates = qchem.read_structure(file)
-    h = qchem.molecular_hamiltonian(symbols, coordinates, name=str(separation))[0]
-    hamiltonians.append(h)
+hamiltonians = [d.hamiltonian for d in datasets]
 
 ##############################################################################
 # Each Hamiltonian can be written as a linear combination of fifteen tensor products of Pauli
 # matrices. Let's take a look more closely at one of the Hamiltonians:
 
 h = hamiltonians[0]
+_, h_ops = h.terms()
 
-print("Number of terms: {}\n".format(len(h.ops)))
-for op in h.ops:
-    print("Measurement {} on wires {}".format(op.name, op.wires))
+print("Number of terms: {}\n".format(len(h_ops)))
+for op in h_ops:
+    print("Measurement {} on wires {}".format(str(op), op.wires))
 
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
 #    Number of terms: 15
 #
-#    Measurement Identity on wires <Wires = [0]>
-#    Measurement PauliZ on wires <Wires = [0]>
-#    Measurement PauliZ on wires <Wires = [1]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [0, 1]>
-#    Measurement ['PauliY', 'PauliX', 'PauliX', 'PauliY'] on wires <Wires = [0, 1, 2, 3]>
-#    Measurement ['PauliY', 'PauliY', 'PauliX', 'PauliX'] on wires <Wires = [0, 1, 2, 3]>
-#    Measurement ['PauliX', 'PauliX', 'PauliY', 'PauliY'] on wires <Wires = [0, 1, 2, 3]>
-#    Measurement ['PauliX', 'PauliY', 'PauliY', 'PauliX'] on wires <Wires = [0, 1, 2, 3]>
-#    Measurement PauliZ on wires <Wires = [2]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [0, 2]>
-#    Measurement PauliZ on wires <Wires = [3]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [0, 3]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [1, 2]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [1, 3]>
-#    Measurement ['PauliZ', 'PauliZ'] on wires <Wires = [2, 3]>
+#    Measurement I(0) on wires Wires([0])
+#    Measurement Z(0) on wires Wires([0])
+#    Measurement Z(1) on wires Wires([1])
+#    Measurement Z(0) @ Z(1) on wires Wires([0, 1])
+#    Measurement Y(0) @ X(1) @ X(2) @ Y(3) on wires Wires([0, 1, 2, 3])
+#    Measurement Y(0) @ Y(1) @ X(2) @ X(3) on wires Wires([0, 1, 2, 3])
+#    Measurement X(0) @ X(1) @ Y(2) @ Y(3) on wires Wires([0, 1, 2, 3])
+#    Measurement X(0) @ Y(1) @ Y(2) @ X(3) on wires Wires([0, 1, 2, 3])
+#    Measurement Z(2) on wires Wires([2])
+#    Measurement Z(0) @ Z(2) on wires Wires([0, 2])
+#    Measurement Z(3) on wires Wires([3])
+#    Measurement Z(0) @ Z(3) on wires Wires([0, 3])
+#    Measurement Z(1) @ Z(2) on wires Wires([1, 2])
+#    Measurement Z(1) @ Z(3) on wires Wires([1, 3])
+#    Measurement Z(2) @ Z(3) on wires Wires([2, 3])
 
 ##############################################################################
 # Defining the energy function
@@ -148,7 +130,7 @@ for op in h.ops:
 # We can evaluate the expectation value of each Hamiltonian with eight terms run on
 # one device and seven terms run on the other, as summarized by the diagram below:
 #
-# .. figure:: /demonstrations/vqe_parallel/vqe_diagram.png
+# .. figure:: /_static/demonstration_assets/vqe_parallel/vqe_diagram.png
 #    :width: 65%
 #    :align: center
 #
@@ -200,7 +182,7 @@ def circuit(param, H):
 # :doc:`tutorial_vqe`. In this tutorial, we load pre-optimized rotations and focus on
 # comparing the speed of evaluating the potential energy surface with sequential and parallel
 # evaluation. These parameters can be downloaded by clicking :download:`here
-# <../demonstrations/vqe_parallel/RY_params.npy>`.
+# <../_static/demonstration_assets/vqe_parallel/RY_params.npy>`.
 
 params = np.load("vqe_parallel/RY_params.npy")
 
@@ -215,7 +197,9 @@ t0 = time.time()
 
 energies_seq = []
 for i, (h, param) in enumerate(zip(hamiltonians, params)):
-    print(f"{i+1} / {len(params)}: Sequential execution; Running for inter-atomic distance {list(data.keys())[i]} Å")
+    print(
+        f"{i+1} / {len(bonds)}: Sequential execution; Running for inter-atomic distance {bonds[i]} Å"
+    )
     energies_seq.append(qml.QNode(circuit, devs[0])(param, h))
 
 dt_seq = time.time() - t0
@@ -227,19 +211,23 @@ print(f"Evaluation time: {dt_seq:.2f} s")
 # distribute them to the 15 devices in ``devs``. This evaluation is delayed using ``dask.delayed`` and later computed
 # in parallel using ``dask.compute``, which asynchronously executes the delayed objects in ``results``.
 
+
 def compute_energy_parallel(H, devs, param):
-    assert len(H.ops) == len(devs)
+    H_coeffs, H_ops = H.terms()
+    assert len(H_ops) == len(devs)
     results = []
 
-    for i in range(len(H.ops)):
+    for i in range(len(H_ops)):
         qnode = qml.QNode(circuit, devs[i])
-        results.append(dask.delayed(qnode)(param, H.ops[i]))
+        results.append(dask.delayed(qnode)(param, H_ops[i]))
 
-    result = H.coeffs @ dask.compute(*results, scheduler="threads")
+    results = dask.compute(*results, scheduler="threads")
+    result = sum(c * r for c, r in zip(H_coeffs, results))
     return result
 
+
 ##############################################################################
-# We can now compute all 10 samples from the energy surface sequentially, where each execution is making use of 
+# We can now compute all 10 samples from the energy surface sequentially, where each execution is making use of
 # parallel device execution. Curiously, in this example the overhead from doing so outweighs the speed-up
 # and the execution is slower than standard execution using ``qml.expval``. For different circuits and
 # different Hamiltonians, however, parallelization may provide significant speed-ups.
@@ -249,7 +237,9 @@ t0 = time.time()
 
 energies_par = []
 for i, (h, param) in enumerate(zip(hamiltonians, params)):
-    print(f"{i+1} / {len(params)}: Parallel execution; Running for inter-atomic distance {list(data.keys())[i]} Å")
+    print(
+        f"{i+1} / {len(bonds)}: Parallel execution; Running for inter-atomic distance {bonds[i]} Å"
+    )
     energies_par.append(compute_energy_parallel(h, devs, param))
 
 dt_par = time.time() - t0
@@ -263,11 +253,15 @@ print(f"Evaluation time: {dt_par:.2f} s")
 # simultaneously. We can utilize the grouping function :func:`~.pennylane.pauli.group_observables` to generate few measurements that
 # are executed in parallel:
 
+
 def compute_energy_parallel_optimized(H, devs, param):
-    assert len(H.ops) == len(devs)
+    H_coeffs, H_ops = H.terms()
+    assert len(H_ops) == len(devs)
     results = []
 
-    obs_groupings, coeffs_groupings = qml.pauli.group_observables(H.ops, H.coeffs, "qwc")
+    obs_groupings, coeffs_groupings = qml.pauli.group_observables(
+        H_ops, H_coeffs, "qwc"
+    )
 
     for i, (obs, coeffs) in enumerate(zip(obs_groupings, coeffs_groupings)):
         H_part = qml.Hamiltonian(coeffs, obs)
@@ -277,12 +271,16 @@ def compute_energy_parallel_optimized(H, devs, param):
     result = qml.math.sum(dask.compute(*results, scheduler="threads"))
     return result
 
-print("Evaluating the potential energy surface in parallel with measurement optimization")
+print(
+    "Evaluating the potential energy surface in parallel with measurement optimization"
+)
 t0 = time.time()
 
 energies_par_opt = []
 for i, (h, param) in enumerate(zip(hamiltonians, params)):
-    print(f"{i+1} / {len(params)}: Parallel execution and measurement optimization; Running for inter-atomic distance {list(data.keys())[i]} Å")
+    print(
+        f"{i+1} / {len(bonds)}: Parallel execution and measurement optimization; Running for inter-atomic distance {bonds[i]} Å"
+    )
     energies_par_opt.append(compute_energy_parallel_optimized(h, devs, param))
 
 dt_par_opt = time.time() - t0
@@ -293,7 +291,6 @@ print(f"Evaluation time: {dt_par_opt:.2f} s")
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -345,7 +342,6 @@ print("Speed up: {0:.2f}".format(dt_seq / dt_par_opt))
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
@@ -355,11 +351,25 @@ print("Speed up: {0:.2f}".format(dt_seq / dt_par_opt))
 # To conclude the tutorial, let's plot the calculated
 # potential energy surfaces:
 
-np.savez("vqe_parallel", energies_seq=energies_seq, energies_par=energies_par, energies_par_opt=energies_par_opt)
+np.savez(
+    "vqe_parallel",
+    energies_seq=energies_seq,
+    energies_par=energies_par,
+    energies_par_opt=energies_par_opt,
+)
 
-plt.plot(energies_seq, linewidth=2.2, marker="d", color="blue", label="sequential")
-plt.plot(energies_par, linewidth=2.2, marker="o", color="red", label="parallel")
-plt.plot(energies_par_opt, linewidth=2.2, marker="d", color="blue", label="paralell and optimized")
+plt.plot(
+    bonds, energies_seq, linewidth=2.2, marker="d", color="green", label="sequential"
+)
+plt.plot(bonds, energies_par, linewidth=2.2, marker="o", color="red", label="parallel")
+plt.plot(
+    bonds,
+    energies_par_opt,
+    linewidth=2.2,
+    marker="d",
+    color="blue",
+    label="paralell and optimized",
+)
 plt.legend(fontsize=12)
 plt.title("Potential energy surface for molecular hydrogen", fontsize=12)
 plt.xlabel("Atomic separation (Å)", fontsize=16)
@@ -367,7 +377,7 @@ plt.ylabel("Ground state energy (Ha)", fontsize=16)
 plt.grid(True)
 
 ##############################################################################
-# .. figure:: /demonstrations/vqe_parallel/vqe_parallel_001.png
+# .. figure:: /_static/demonstration_assets/vqe_parallel/vqe_parallel_001.png
 #    :width: 80%
 #    :align: center
 #
@@ -380,4 +390,4 @@ plt.grid(True)
 ##############################################################################
 # About the author
 # ----------------
-# .. include:: ../_static/authors/thomas_bromley.txt
+#

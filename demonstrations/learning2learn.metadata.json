@@ -2,11 +2,11 @@
     "title": "Learning to learn with quantum neural networks",
     "authors": [
         {
-            "id": "stefano_mangini"
+            "username": "smangini"
         }
     ],
-    "dateOfPublication": "2021-03-02T00:00:00",
-    "dateOfLastModification": "2021-09-15T00:00:00",
+    "dateOfPublication": "2021-03-02T00:00:00+00:00",
+    "dateOfLastModification": "2025-01-07T00:00:00+00:00",
     "categories": [
         "Quantum Machine Learning"
     ],
@@ -14,14 +14,15 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/l2l_thumbnail.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_learning_to_learn_quantum_neural.png"
         }
     ],
     "seoDescription": "Use a classical recurrent neural network to initilize the parameters of a variational quatum algorithm.",
     "doi": "",
-    "canonicalURL": "/qml/demos/learning2learn",
     "references": [],
-    "basedOnPapers": [],
+    "basedOnPapers": [
+        "10.48550/arXiv.1907.05415"
+    ],
     "referencedByPapers": [],
     "relatedContent": [
         {

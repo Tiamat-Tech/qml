@@ -5,7 +5,7 @@ Quantum gradients with backpropagation
 .. meta::
     :property="og:description": Using backpropagation can speed up training of quantum circuits compared to the parameter-shift rule—if you are using a simulator.
 
-    :property="og:image": https://pennylane.ai/qml/_images/sphx_glr_tutorial_backprop_002.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/sphx_glr_tutorial_backprop_002.png
 
 .. related::
 
@@ -30,7 +30,7 @@ The parameter-shift rule
 ------------------------
 
 The parameter-shift rule states that, given a variational quantum circuit :math:`U(\boldsymbol
-\theta)` composed of parametrized Pauli rotations, and some measured observable :math:`\hat{B}`, the
+\theta)` composed of parametrized Pauli rotations, and some measured observable :math:`\hat{B},` the
 derivative of the expectation value
 
 .. math::
@@ -55,28 +55,42 @@ quantum circuit, but with shifted parameter values (hence the name, parameter-sh
 Let's have a go implementing the parameter-shift rule manually in PennyLane.
 """
 import pennylane as qml
-from pennylane import numpy as np
+from jax import numpy as jnp
 from matplotlib import pyplot as plt
+import jax
+
+jax.config.update("jax_platform_name", "cpu")
+jax.config.update('jax_enable_x64', True)
 
 # set the random seed
-np.random.seed(42)
+key = jax.random.PRNGKey(42)
+
 
 # create a device to execute the circuit on
 dev = qml.device("default.qubit", wires=3)
 
-@qml.qnode(dev, diff_method="parameter-shift", interface="autograd")
+
+def CNOT_ring(wires):
+    """Apply CNOTs in a ring pattern"""
+    n_wires = len(wires)
+
+    for w in wires:
+        qml.CNOT([w % n_wires, (w + 1) % n_wires])
+
+
+@qml.qnode(dev, diff_method="parameter-shift")
 def circuit(params):
     qml.RX(params[0], wires=0)
     qml.RY(params[1], wires=1)
     qml.RZ(params[2], wires=2)
 
-    qml.broadcast(qml.CNOT, wires=[0, 1, 2], pattern="ring")
+    CNOT_ring(wires=[0, 1, 2])
 
     qml.RX(params[3], wires=0)
     qml.RY(params[4], wires=1)
     qml.RZ(params[5], wires=2)
 
-    qml.broadcast(qml.CNOT, wires=[0, 1, 2], pattern="ring")
+    CNOT_ring(wires=[0, 1, 2])
     return qml.expval(qml.PauliY(0) @ qml.PauliZ(2))
 
 
@@ -84,7 +98,8 @@ def circuit(params):
 # Let's test the variational circuit evaluation with some parameter input:
 
 # initial parameters
-params = np.random.random([6], requires_grad=True)
+params = jax.random.normal(key, [6])
+
 
 print("Parameters:", params)
 print("Expectation value:", circuit(params))
@@ -103,10 +118,10 @@ plt.show()
 
 def parameter_shift_term(qnode, params, i):
     shifted = params.copy()
-    shifted[i] += np.pi/2
+    shifted = shifted.at[i].add(jnp.pi/2)
     forward = qnode(shifted)  # forward evaluation
 
-    shifted[i] -= np.pi
+    shifted = shifted.at[i].add(-jnp.pi)
     backward = qnode(shifted) # backward evaluation
 
     return 0.5 * (forward - backward)
@@ -119,10 +134,10 @@ print(parameter_shift_term(circuit, params, 0))
 # to loop over the index ``i``:
 
 def parameter_shift(qnode, params):
-    gradients = np.zeros([len(params)])
+    gradients = jnp.zeros([len(params)])
 
     for i in range(len(params)):
-        gradients[i] = parameter_shift_term(qnode, params, i)
+        gradients = gradients.at[i].set(parameter_shift_term(qnode, params, i))
 
     return gradients
 
@@ -130,20 +145,18 @@ print(parameter_shift(circuit, params))
 
 ##############################################################################
 # We can compare this to PennyLane's *built-in* quantum gradient support by using
-# the :func:`qml.grad <pennylane.grad>` function, which allows us to compute gradients
-# of hybrid quantum-classical cost functions. Remember, when we defined the
+# the ``jax.grad`` function. Remember, when we defined the
 # QNode, we specified that we wanted it to be differentiable using the parameter-shift
 # method (``diff_method="parameter-shift"``).
 
-grad_function = qml.grad(circuit)
+grad_function = jax.grad(circuit)
 print(grad_function(params)[0])
 
 ##############################################################################
 # Alternatively, we can directly compute quantum gradients of QNodes using
 # PennyLane's built in :mod:`qml.gradients <pennylane.gradients>` module:
 
-print(qml.gradients.param_shift(circuit)(params))
-
+print(jnp.stack(qml.gradients.param_shift(circuit)(params)))
 
 ##############################################################################
 # If you count the number of quantum evaluations, you will notice that we had to evaluate the circuit
@@ -167,14 +180,15 @@ print(qml.gradients.param_shift(circuit)(params))
 
 dev = qml.device("default.qubit", wires=4)
 
-@qml.qnode(dev, diff_method="parameter-shift", interface="autograd")
+@qml.qnode(dev, diff_method="parameter-shift")
 def circuit(params):
     qml.StronglyEntanglingLayers(params, wires=[0, 1, 2, 3])
     return qml.expval(qml.PauliZ(0) @ qml.PauliZ(1) @ qml.PauliZ(2) @ qml.PauliZ(3))
 
 # initialize circuit parameters
 param_shape = qml.StronglyEntanglingLayers.shape(n_wires=4, n_layers=15)
-params = np.random.normal(scale=0.1, size=param_shape, requires_grad=True)
+params = jax.random.normal(key, param_shape) * 0.1
+
 print(params.size)
 print(circuit(params))
 
@@ -197,7 +211,7 @@ print(f"Forward pass (best of {reps}): {forward_time} sec per loop")
 # and see how this compares.
 
 # create the gradient function
-grad_fn = qml.grad(circuit)
+grad_fn = jax.grad(circuit)
 
 times = timeit.repeat("grad_fn(params)", globals=globals(), number=num, repeat=reps)
 backward_time = min(times) / num
@@ -229,7 +243,7 @@ print(2 * forward_time * params.size)
 # In most classical machine learning settings (where we are training scalar loss functions
 # consisting of a large number of parameters),
 # reverse-mode autodifferentiation is the
-# preferred method of autodifferentiation---the reduction in computational time enables larger and
+# preferred method of autodifferentiation—the reduction in computational time enables larger and
 # more complex models to be successfully trained. The backpropagation algorithm is a particular
 # special-case of reverse-mode autodifferentiation, which has helped lead to the machine learning
 # explosion we see today.
@@ -254,7 +268,7 @@ print(2 * forward_time * params.size)
 # One such device is :class:`default.qubit <pennylane.devices.DefaultQubit>`. It
 # has backends written using TensorFlow, JAX, and Autograd, so when used with the
 # TensorFlow, JAX, and Autograd interfaces respectively, supports backpropagation.
-# In this demo, we will use the default Autograd interface.
+# In this demo, we will use the JAX interface.
 
 dev = qml.device("default.qubit", wires=4)
 
@@ -264,14 +278,15 @@ dev = qml.device("default.qubit", wires=4)
 # mode* for the ``default.qubit`` device.
 
 
-@qml.qnode(dev, diff_method="backprop", interface="autograd")
+@qml.qnode(dev, diff_method="backprop")
 def circuit(params):
     qml.StronglyEntanglingLayers(params, wires=[0, 1, 2, 3])
     return qml.expval(qml.PauliZ(0) @ qml.PauliZ(1) @ qml.PauliZ(2) @ qml.PauliZ(3))
 
 # initialize circuit parameters
 param_shape = qml.StronglyEntanglingLayers.shape(n_wires=4, n_layers=15)
-params = np.random.normal(scale=0.1, size=param_shape, requires_grad=True)
+params = jax.random.normal(key, param_shape) * 0.1
+
 print(circuit(params))
 
 ##############################################################################
@@ -291,7 +306,7 @@ print(f"Forward pass (best of {reps}): {forward_time} sec per loop")
 # overhead from using backpropagation. We can now estimate the time required to perform a
 # gradient computation via backpropagation:
 
-times = timeit.repeat("qml.grad(circuit)(params)", globals=globals(), number=num, repeat=reps)
+times = timeit.repeat("jax.grad(circuit)(params)", globals=globals(), number=num, repeat=reps)
 backward_time = min(times) / num
 print(f"Backward pass (best of {reps}): {backward_time} sec per loop")
 
@@ -328,16 +343,21 @@ gradient_shift = []
 forward_backprop = []
 gradient_backprop = []
 
+qnode_shift = jax.jit(qml.QNode(circuit, dev, diff_method="parameter-shift"))
+qnode_backprop = jax.jit(qml.QNode(circuit, dev, diff_method="backprop"))
+
+grad_qnode_shift = jax.jit(jax.grad(qml.QNode(circuit, dev, diff_method="parameter-shift")))
+grad_qnode_backprop = jax.jit(jax.grad(qml.QNode(circuit, dev, diff_method="backprop")))
+
 for depth in range(0, 21):
     param_shape = qml.StronglyEntanglingLayers.shape(n_wires=4, n_layers=depth)
-    params = np.random.normal(scale=0.1, size=param_shape, requires_grad=True)
+    params = jax.random.normal(key, param_shape) * 0.1
+
     num_params = params.size
 
     # forward pass timing
     # ===================
 
-    qnode_shift = qml.QNode(circuit, dev, diff_method="parameter-shift", interface="autograd")
-    qnode_backprop = qml.QNode(circuit, dev, diff_method="backprop", interface="autograd")
 
     # parameter-shift
     t = timeit.repeat("qnode_shift(params)", globals=globals(), number=num, repeat=reps)
@@ -353,21 +373,18 @@ for depth in range(0, 21):
     # Gradient timing
     # ===============
 
-    qnode_shift = qml.QNode(circuit, dev, diff_method="parameter-shift", interface="autograd")
-    qnode_backprop = qml.QNode(circuit, dev, diff_method="backprop", interface="autograd")
-
     # parameter-shift
-    t = timeit.repeat("qml.grad(qnode_shift)(params)", globals=globals(), number=num, repeat=reps)
+    t = timeit.repeat("grad_qnode_shift(params)", globals=globals(), number=num, repeat=reps)
     gradient_shift.append([num_params, min(t) / num])
 
     # backprop
-    t = timeit.repeat("qml.grad(qnode_backprop)(params)", globals=globals(), number=num, repeat=reps)
+    t = timeit.repeat("grad_qnode_backprop(params)", globals=globals(), number=num, repeat=reps)
     gradient_backprop.append([num_params, min(t) / num])
 
-gradient_shift = np.array(gradient_shift).T
-gradient_backprop = np.array(gradient_backprop).T
-forward_shift = np.array(forward_shift).T
-forward_backprop = np.array(forward_backprop).T
+gradient_shift = jnp.array(gradient_shift).T
+gradient_backprop = jnp.array(gradient_backprop).T
+forward_shift = jnp.array(forward_shift).T
+forward_backprop = jnp.array(forward_backprop).T
 
 ##############################################################################
 # We now import matplotlib, and plot the results.
@@ -392,16 +409,16 @@ plt.show()
 # We can see that the computational time for the parameter-shift rule increases with
 # increasing number of parameters, as expected, whereas the computational time
 # for backpropagation appears much more constant, with perhaps a minute linear increase
-# with :math:`p`. Note that the plots are not perfectly linear, with some 'bumpiness' or
+# with :math:`p.` Note that the plots are not perfectly linear, with some 'bumpiness' or
 # noisiness. This is likely due to low-level operating system jitter, and
-# other environmental fluctuations---increasing the number of repeats can help smooth
+# other environmental fluctuations—increasing the number of repeats can help smooth
 # out the plot.
 #
 # For a better comparison, we can scale the time required for computing the quantum
 # gradients against the time taken for the corresponding forward pass:
 
-gradient_shift[1] /= forward_shift[1, 1:]
-gradient_backprop[1] /= forward_backprop[1, 1:]
+gradient_shift = gradient_shift.at[1].divide(forward_shift[1, 1:])
+gradient_backprop = gradient_backprop.at[1].divide(forward_backprop[1, 1:])
 
 fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 
@@ -411,8 +428,8 @@ ax.plot(*gradient_backprop, '.-', label="Backprop")
 # perform a least squares regression to determine the linear best fit/gradient
 # for the normalized time vs. number of parameters
 x = gradient_shift[0]
-m_shift, c_shift = np.polyfit(*gradient_shift, deg=1)
-m_back, c_back = np.polyfit(*gradient_backprop, deg=1)
+m_shift, c_shift = jnp.polyfit(*gradient_shift, deg=1)
+m_back, c_back = jnp.polyfit(*gradient_backprop, deg=1)
 
 ax.plot(x, m_shift * x + c_shift, '--', label=f"{m_shift:.2f}p{c_shift:+.2f}")
 ax.plot(x, m_back * x + c_back, '--', label=f"{m_back:.2f}p{c_back:+.2f}")
@@ -431,9 +448,9 @@ plt.show()
 #     <br>
 #
 # We can now see clearly that there is constant overhead for backpropagation with
-# ``default.qubit``, but the parameter-shift rule scales as :math:`\sim 2p`.
+# ``default.qubit``, but the parameter-shift rule scales as :math:`\sim 2p.`
 #
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/josh_izaac.txt
+#

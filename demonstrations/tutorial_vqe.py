@@ -5,7 +5,7 @@ A brief overview of VQE
 .. meta::
     :property="og:description": Find the ground state of a Hamiltonian using the
         variational quantum eigensolver algorithm.
-    :property="og:image": https://pennylane.ai/qml/_images/pes_h2.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/pes_h2.png
 
 .. related::
 
@@ -15,7 +15,7 @@ A brief overview of VQE
    tutorial_vqe_spin_sectors VQE in different spin sectors
    tutorial_vqt Variational quantum thermalizer
 
-*Author: Alain Delgado — Posted: 08 February 2020. Last updated: 25 June 2022.*
+*Author: Alain Delgado — Posted: 08 February 2020. Last updated: 29 August 2023.*
 
 The Variational Quantum Eigensolver (VQE) is a flagship algorithm for quantum chemistry
 using near-term quantum computers [#peruzzo2014]_. It is an application of the
@@ -32,7 +32,7 @@ and calculate its gradient at each optimization step.
 
 In this tutorial you will learn how to implement the VQE algorithm in a few lines of code.
 As an illustrative example, we use it to find the ground state of the hydrogen
-molecule, :math:`\mathrm{H}_2`. First, we build the molecular Hamiltonian using a minimal
+molecule, :math:`\mathrm{H}_2.` First, we build the molecular Hamiltonian using a minimal
 basis set approximation. Next, we design the quantum circuit preparing the trial
 state of the molecule, and the cost function to evaluate the expectation value
 of the Hamiltonian. Finally, we select a classical optimizer, initialize the
@@ -42,30 +42,30 @@ Let's get started!
 
 Building the electronic Hamiltonian
 -----------------------------------
-The first step is to specify the molecule we want to simulate. This
-is done by providing a list with the symbols of the constituent atoms
-and a one-dimensional array with the corresponding nuclear coordinates
-in `atomic units <https://en.wikipedia.org/wiki/Hartree_atomic_units>`_.
+The first step is to specify the molecule we want to simulate. We will use
+the electronic Hamiltonian of the hydrogen molecule. A wide variety of molecular
+data, including Hamiltonians, is available on the
+`PennyLane Datasets service <https://pennylane.ai/datasets>`__. This data can
+be downloaded using the :func:`~.pennylane.data.load` function:
 """
-from pennylane import numpy as np
 
-symbols = ["H", "H"]
-coordinates = np.array([0.0, 0.0, -0.6614, 0.0, 0.0, 0.6614])
-
-##############################################################################
-# The molecular structure can also be imported from an external file using
-# the :func:`~.pennylane.qchem.read_structure` function.
-#
-# Now, we can build the electronic Hamiltonian of the hydrogen molecule
-# using the :func:`~.pennylane.qchem.molecular_hamiltonian` function.
+from jax import numpy as np
+import jax
+jax.config.update("jax_platform_name", "cpu")
+jax.config.update('jax_enable_x64', True)
 
 import pennylane as qml
 
-H, qubits = qml.qchem.molecular_hamiltonian(symbols, coordinates)
+dataset = qml.data.load('qchem', molname="H2")[0]
+H, qubits = dataset.hamiltonian, len(dataset.hamiltonian.wires)
 print("Number of qubits = ", qubits)
 print("The Hamiltonian is ", H)
 
 ##############################################################################
+# For more details on quantum datasets, check out the
+# `Quantum Datasets <https://docs.pennylane.ai/en/stable/introduction/data.html>`__
+# documentation.
+#
 # The outputs of the function are the Hamiltonian, represented as
 # a linear combination of Pauli operators, and the number of qubits
 # required for the quantum simulations. For this example, we use a
@@ -79,13 +79,24 @@ print("The Hamiltonian is ", H)
 # For a more comprehensive discussion on how to build the Hamiltonian of more
 # complicated molecules, see the tutorial :doc:`tutorial_quantum_chemistry`.
 #
+# .. note::
+#
+#     You can also manually construct the Hamiltonian using the following code:
+#
+#     .. code-block:: python
+#
+#         symbols = ["H", "H"]
+#         coordinates = np.array([[0.0, 0.0, -0.6614], [0.0, 0.0, 0.6614]])
+#         molecule = qml.qchem.Molecule(symbols, coordinates)
+#         H, qubits = qml.qchem.molecular_hamiltonian(molecule)
+#
 # Implementing the VQE algorithm
 # ------------------------------
 # From here on, we can use PennyLane as usual, employing its entire stack of
 # algorithms and optimizers. We begin by defining the device, in this case PennyLane’s
 # standard qubit simulator:
 
-dev = qml.device("default.qubit", wires=qubits)
+dev = qml.device("lightning.qubit", wires=qubits)
 
 ##############################################################################
 # Next, we need to define the quantum circuit that prepares the trial state of the
@@ -107,7 +118,7 @@ dev = qml.device("default.qubit", wires=qubits)
 #
 # |
 #
-# .. figure:: /demonstrations/variational_quantum_eigensolver/sketch_circuit.png
+# .. figure:: /_static/demonstration_assets/variational_quantum_eigensolver/sketch_circuit.png
 #     :width: 50%
 #     :align: center
 #
@@ -116,7 +127,7 @@ dev = qml.device("default.qubit", wires=qubits)
 # In this figure, the gate :math:`G^{(2)}` corresponds to the
 # :class:`~.pennylane.DoubleExcitation` operation, implemented in PennyLane
 # as a `Givens rotation <https://en.wikipedia.org/wiki/Givens_rotation>`_, which couples
-# the four-qubit states :math:`\vert 1100 \rangle` and :math:`\vert 0011 \rangle`.
+# the four-qubit states :math:`\vert 1100 \rangle` and :math:`\vert 0011 \rangle.`
 # For more details on how to use the excitation operations to build
 # quantum circuits for quantum chemistry applications see the
 # tutorial :doc:`tutorial_givens_rotations`.
@@ -131,45 +142,46 @@ print(hf)
 ##############################################################################
 # The ``hf`` array is used by the :class:`~.pennylane.BasisState` operation to initialize
 # the qubit register. Then, we just act with the :class:`~.pennylane.DoubleExcitation` operation
-# on the four qubits.
+# on the four qubits. The next step is to compute the expectation value
+# of the molecular Hamiltonian in the trial state prepared by the circuit.
+# We do this using the :func:`~.expval` function. The decorator syntax allows us to
+# run the cost function as an executable QNode with the gate parameter :math:`\theta:`
 
-
+@qml.qnode(dev, interface="jax")
 def circuit(param, wires):
     qml.BasisState(hf, wires=wires)
     qml.DoubleExcitation(param, wires=[0, 1, 2, 3])
-
-
-##############################################################################
-# The next step is to define the cost function to compute the expectation value
-# of the molecular Hamiltonian in the trial state prepared by the circuit.
-# We do this using the :func:`~.expval` function. The decorator syntax allows us to
-# run the cost function as an executable QNode with the gate parameter :math:`\theta`:
-
-
-@qml.qnode(dev, interface="autograd")
-def cost_fn(param):
-    circuit(param, wires=range(qubits))
     return qml.expval(H)
 
 
 ##############################################################################
+# We can now define our error function simply as the expected value calculated above:
+
+
+def cost_fn(param):
+    return circuit(param, wires=range(qubits))
+
+##############################################################################
 # Now we proceed to minimize the cost function to find the ground state of
 # the :math:`\mathrm{H}_2` molecule. To start, we need to define the classical optimizer.
-# PennyLane offers many different built-in
-# `optimizers <https://docs.pennylane.ai/en/stable/introduction/interfaces.html?highlight=optimizers#optimizers>`_.
+# The library ``optax`` offers different `optimizers <https://optax.readthedocs.io/en/latest/api.html>`__.
 # Here we use a basic gradient-descent optimizer.
+# We carry out the optimization over a maximum of 100 steps aiming to reach a
+# convergence tolerance of :math:`10^{-6}` for the value of the cost function.
 
-opt = qml.GradientDescentOptimizer(stepsize=0.4)
+
+import optax
+
+max_iterations = 100
+conv_tol = 1e-06
+
+opt = optax.sgd(learning_rate=0.4)
 
 ##############################################################################
 # We initialize the circuit parameter :math:`\theta` to zero, meaning that we start
 # from the Hartree-Fock state.
 
-theta = np.array(0.0, requires_grad=True)
-
-##############################################################################
-# We carry out the optimization over a maximum of 100 steps aiming to reach a
-# convergence tolerance of :math:`10^{-6}` for the value of the cost function.
+theta = np.array(0.)
 
 # store the values of the cost function
 energy = [cost_fn(theta)]
@@ -177,16 +189,18 @@ energy = [cost_fn(theta)]
 # store the values of the circuit parameter
 angle = [theta]
 
-max_iterations = 100
-conv_tol = 1e-06
+opt_state = opt.init(theta)
 
 for n in range(max_iterations):
-    theta, prev_energy = opt.step_and_cost(cost_fn, theta)
 
-    energy.append(cost_fn(theta))
+    gradient = jax.grad(cost_fn)(theta)
+    updates, opt_state = opt.update(gradient, opt_state)
+    theta = optax.apply_updates(theta, updates)
+    
     angle.append(theta)
+    energy.append(cost_fn(theta))
 
-    conv = np.abs(energy[-1] - prev_energy)
+    conv = np.abs(energy[-1] - energy[-2])
 
     if n % 2 == 0:
         print(f"Step = {n},  Energy = {energy[-1]:.8f} Ha")
@@ -278,4 +292,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/alain_delgado.txt
+#

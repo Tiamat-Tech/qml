@@ -1,12 +1,12 @@
 {
-    "title": "How to approximate a classical kernel with a quantum computer",
+    "title": "Approximating a classical kernel with a quantum computer",
     "authors": [
         {
-            "id": "elies_gil-fuster"
+            "username": "egfuster"
         }
     ],
-    "dateOfPublication": "2022-03-01T00:00:00",
-    "dateOfLastModification": "2022-03-02T00:00:00",
+    "dateOfPublication": "2022-03-01T00:00:00+00:00",
+    "dateOfLastModification": "2024-11-06T00:00:00+00:00",
     "categories": [
         "Quantum Machine Learning"
     ],
@@ -14,38 +14,37 @@
     "previewImages": [
         {
             "type": "thumbnail",
-            "uri": "/_images/toy_qek.png"
+            "uri": "/_static/demo_thumbnails/regular_demo_thumbnails/thumbnail_approximate_classical_kernal.png"
         }
     ],
-    "seoDescription": "Finding a QK to approximate the Gaussian kernel.",
+    "seoDescription": "Finding a quantum kernel to approximate the Gaussian kernel.",
     "doi": "",
-    "canonicalURL": "/qml/demos/tutorial_classical_kernels",
     "references": [
         {
             "id": "QEK",
+            "type": "article",
             "title": "Training Quantum Embedding Kernels on Near-Term Quantum Computers",
             "authors": "Thomas Hubregtsen, David Wierichs, Elies Gil-Fuster, Peter-Jan HS Derks, Paul K Faehrmann, Johannes Jakob Meyer",
-            "year": "",
+            "year": "2021",
             "journal": "arXiv preprint",
-            "doi": "",
             "url": "https://arxiv.org/abs/2105.02276"
         },
         {
             "id": "Fourier",
+            "type": "article",
             "title": "The effect of data encoding on the expressive power of variational quantum machine learning models",
             "authors": "Maria Schuld, Ryan Sweke, Johannes Jakob Meyer",
-            "year": "",
+            "year": "2021",
             "journal": "Phys. Rev. A",
-            "doi": "",
             "url": "https://journals.aps.org/pra/abstract/10.1103/PhysRevA.103.032430"
         },
         {
             "id": "qkernels",
+            "type": "article",
             "title": "Supervised quantum machine learning models are kernel methods",
             "authors": "Maria Schuld",
-            "year": "",
+            "year": "2021",
             "journal": "arXiv preprint",
-            "doi": "",
             "url": "https://arxiv.org/abs/2101.11020"
         }
     ],

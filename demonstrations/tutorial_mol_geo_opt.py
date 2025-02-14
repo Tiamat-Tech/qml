@@ -4,7 +4,7 @@ Optimization of molecular geometries
 
 .. meta::
     :property="og:description": Find the equilibrium geometry of a molecule
-    :property="og:image": https://pennylane.ai/qml/_images/fig_pes.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/fig_pes.png
 
 .. related::
    tutorial_quantum_chemistry Building molecular Hamiltonians
@@ -22,18 +22,18 @@ also be inaccurate.
 
 Since the nuclei are much heavier than the electrons, we can treat them as point particles
 clamped to their positions. Under this assumption, the total energy of the molecule :math:`E(x)`
-depends on the nuclear coordinates :math:`x`, which define the potential energy surface.
+depends on the nuclear coordinates :math:`x,` which define the potential energy surface.
 Solving the stationary problem :math:`\nabla_x E(x) = 0` corresponds to molecular geometry
 optimization and the optimized nuclear coordinates determine the equilibrium geometry of the
 molecule. The figure below illustrates these concepts for the
 `trihydrogen cation <https://en.wikipedia.org/wiki/Trihydrogen_cation>`_. Its equilibrium
 geometry in the electronic ground state corresponds to the minimum energy of the potential
 energy surface. At this minimum, the three hydrogen atoms are located at the vertices of an
-equilateral triangle whose side length is the optimized bond length :math:`d`.
+equilateral triangle whose side length is the optimized bond length :math:`d.`
 
 |
 
-.. figure:: /demonstrations/mol_geo_opt/fig_pes.png
+.. figure:: /_static/demonstration_assets/mol_geo_opt/fig_pes.png
     :width: 50%
     :align: center
 
@@ -42,7 +42,7 @@ equilateral triangle whose side length is the optimized bond length :math:`d`.
 In this tutorial, you will learn how to recast the problem of finding the equilibrium
 geometry of a molecule in terms of a general variational quantum algorithm. The
 central idea is to consider explicitly that the target electronic Hamiltonian :math:`H(x)`
-is a **parametrized** observable that depends on the nuclear coordinates :math:`x`. This
+is a **parametrized** observable that depends on the nuclear coordinates :math:`x.` This
 implies that the objective function, defined by the expectation value of the Hamiltonian
 computed in the trial state prepared by a quantum computer, depends on both the quantum
 circuit and the Hamiltonian parameters.
@@ -67,14 +67,14 @@ quantum optimization of molecular geometries. The algorithm consists of the foll
 #. Build the parametrized electronic Hamiltonian :math:`H(x)` of the molecule.
 
 #. Design the variational quantum circuit to prepare the electronic trial state of the
-   molecule, :math:`\vert \Psi(\theta) \rangle`.
+   molecule, :math:`\vert \Psi(\theta) \rangle.`
 
 #. Define the cost function :math:`g(\theta, x) = \langle \Psi(\theta) \vert H(x) \vert
    \Psi(\theta) \rangle`.
 
-#. Initialize the variational parameters :math:`\theta` and :math:`x`. Perform a joint
+#. Initialize the variational parameters :math:`\theta` and :math:`x.` Perform a joint
    optimization of the circuit and Hamiltonian parameters to minimize the cost function 
-   :math:`g(\theta, x)`. The gradient with respect to the circuit parameters can be obtained
+   :math:`g(\theta, x).` The gradient with respect to the circuit parameters can be obtained
    using a variety of established methods, which are natively supported in PennyLane. The
    gradients with respect to the nuclear coordinates can be computed using the formula
 
@@ -92,7 +92,7 @@ Building the parametrized electronic Hamiltonian
 ------------------------------------------------
 
 In this example, we want to optimize the geometry of the trihydrogen cation
-:math:`\mathrm{H}_3^+`, described in a minimal basis set, where two electrons are shared
+:math:`\mathrm{H}_3^+,` described in a minimal basis set, where two electrons are shared
 between three hydrogen atoms (see figure above). The molecule is specified by providing a list
 with the symbols of the atomic species and a one-dimensional array with the initial
 set of nuclear coordinates in `atomic units
@@ -100,13 +100,16 @@ set of nuclear coordinates in `atomic units
 
 """
 
-from pennylane import numpy as np
+import jax
+from jax import numpy as jnp
+
+jax.config.update("jax_enable_x64", True)
 
 symbols = ["H", "H", "H"]
-x = np.array([0.028, 0.054, 0.0, 0.986, 1.610, 0.0, 1.855, 0.002, 0.0], requires_grad=True)
+x = jnp.array([[0.028, 0.054, 0.0], [0.986, 1.610, 0.0], [1.855, 0.002, 0.0]])
 
 ##############################################################################
-# Next, we need to build the parametrized electronic Hamiltonian :math:`H(x)`.
+# Next, we need to build the parametrized electronic Hamiltonian :math:`H(x).`
 # We use the Jordan-Wigner transformation [#seeley2012]_ to represent the fermionic
 # Hamiltonian as a linear combination of Pauli operators,
 #
@@ -114,8 +117,8 @@ x = np.array([0.028, 0.054, 0.0, 0.986, 1.610, 0.0, 1.855, 0.002, 0.0], requires
 #
 #     H(x) = \sum_j h_j(x) \prod_i^{N} \sigma_i^{(j)}.
 #
-# The expansion coefficients :math:`h_j(x)` carry the dependence on the coordinates :math:`x`,
-# the operators :math:`\sigma_i` represent the Pauli group :math:`\{I, X, Y, Z\}`, and
+# The expansion coefficients :math:`h_j(x)` carry the dependence on the coordinates :math:`x,`
+# the operators :math:`\sigma_i` represent the Pauli group :math:`\{I, X, Y, Z\},` and
 # :math:`N` is the number of qubits required to represent the electronic wave function.
 #
 # We define the function ``H(x)`` to build the parametrized Hamiltonian
@@ -126,7 +129,8 @@ import pennylane as qml
 
 
 def H(x):
-    return qml.qchem.molecular_hamiltonian(symbols, x, charge=1)[0]
+    molecule = qml.qchem.Molecule(symbols, x, charge=1)
+    return qml.qchem.molecular_hamiltonian(molecule)[0]
 
 
 ##############################################################################
@@ -155,7 +159,7 @@ def H(x):
 #    double-excitations.
 #    For example, the indices of the singly-excited state :math:`\vert 011000 \rangle`
 #    are given by the list ``[0, 2]``. Similarly, the indices of the doubly-excited
-#    state :math:`\vert 000011 \rangle` are ``[0, 1, 4, 5]``.
+#    state :math:`\vert 000011 \rangle` are ``[0, 1, 4, 5]`.`
 #
 # #. Construct the circuit using all double-excitation gates. Compute the gradient
 #    of the cost function :math:`g(\theta, x)` with respect to each double-excitation
@@ -173,7 +177,7 @@ def H(x):
 #
 # |
 #
-# .. figure:: /demonstrations/mol_geo_opt/fig_circuit.png
+# .. figure:: /_static/demonstration_assets/mol_geo_opt/fig_circuit.png
 #     :width: 60%
 #     :align: center
 #
@@ -195,7 +199,7 @@ num_wires = 6
 dev = qml.device("default.qubit", wires=num_wires)
 
 
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev, interface="jax")
 def circuit(params, obs, wires):
     qml.BasisState(hf, wires=wires)
     qml.DoubleExcitation(params[0], wires=[0, 1, 2, 3])
@@ -221,9 +225,9 @@ def circuit(params, obs, wires):
 # -------------------------------------------
 #
 # The third step of the algorithm is to define the cost function
-# :math:`g(\theta, x) = \langle \Psi(\theta) \vert H(x) \vert\Psi(\theta) \rangle`. It
+# :math:`g(\theta, x) = \langle \Psi(\theta) \vert H(x) \vert\Psi(\theta) \rangle.` It
 # evaluates the expectation value of the parametrized Hamiltonian :math:`H(x)` in the
-# trial state :math:`\vert\Psi(\theta)\rangle`.
+# trial state :math:`\vert\Psi(\theta)\rangle.`
 
 ##############################################################################
 # Next, we define the ``cost`` function :math:`g(\theta, x)` which depends on
@@ -240,7 +244,7 @@ def cost(params, x):
 #
 # We minimize the cost function :math:`g(\theta, x)` using a gradient-based
 # method, and compute the gradients with respect to both the
-# circuit parameters :math:`\theta` and the nuclear coordinates :math:`x`.
+# circuit parameters :math:`\theta` and the nuclear coordinates :math:`x.`
 # The circuit gradients are computed analytically using the automatic differentiation
 # techniques available in PennyLane. The nuclear gradients are evaluated
 # by taking the expectation value of the gradient of the electronic Hamiltonian,
@@ -251,17 +255,18 @@ def cost(params, x):
 #
 # We use the :func:`finite_diff` function to compute the gradient of
 # the Hamiltonian using a central-difference approximation. Then, we evaluate the expectation
-# value of the gradient components :math:`\frac{\partial H(x)}{\partial x_i}`. This is implemented by
+# value of the gradient components :math:`\frac{\partial H(x)}{\partial x_i}.` This is implemented by
 # the function ``grad_x``:
 
 
 def finite_diff(f, x, delta=0.01):
     """Compute the central-difference finite difference of a function"""
     gradient = []
+    x = jnp.ravel(x)
 
     for i in range(len(x)):
-        shift = np.zeros_like(x)
-        shift[i] += 0.5 * delta
+        shift = jnp.zeros_like(x)
+        shift = shift.at[i].set(0.5*delta)
         res = (f(x + shift) - f(x - shift)) * delta**-1
         gradient.append(res)
 
@@ -271,7 +276,7 @@ def finite_diff(f, x, delta=0.01):
 def grad_x(params, x):
     grad_h = finite_diff(H, x)
     grad = [circuit(params, obs=obs, wires=range(num_wires)) for obs in grad_h]
-    return np.array(grad)
+    return jnp.array(grad).reshape(x.shape)
 
 
 ##############################################################################
@@ -284,37 +289,29 @@ def grad_x(params, x):
 # each optimization step. This approach does not require nested VQE
 # optimization of the circuit parameters for each set of nuclear coordinates.
 #
-# We start by defining the classical optimizers:
-
-opt_theta = qml.GradientDescentOptimizer(stepsize=0.4)
-opt_x = qml.GradientDescentOptimizer(stepsize=0.8)
-
-##############################################################################
-# Next, we initialize the circuit parameters :math:`\theta`. The angles
+# First, we initialize the circuit parameters :math:`\theta.` The angles
 # :math:`\theta_1` and :math:`\theta_2` are set to zero so that the
 # initial state :math:`\vert\Psi(\theta_1, \theta_2)\rangle`
 # is the Hartree-Fock state.
 
-theta = np.array([0.0, 0.0], requires_grad=True)
+theta = jnp.array([0.0, 0.0])
 
 ##############################################################################
-# The initial set of nuclear coordinates :math:`x`, defined at
+# The initial set of nuclear coordinates :math:`x,` defined at
 # the beginning of the tutorial, was computed classically within the Hartree-Fock
 # approximation using the GAMESS program [#ref_gamess]_. This is a natural choice
 # for the starting geometry that we are aiming to improve due to the electronic
-# correlation effects included in the trial state :math:`\vert\Psi(\theta)\rangle`.
+# correlation effects included in the trial state :math:`\vert\Psi(\theta)\rangle.`
 #
-# We carry out the optimization over a maximum of 100 steps.
+# We carry out the optimization over a maximum of 36 steps.
 # The circuit parameters and the nuclear coordinates are optimized until the
 # maximum component of the nuclear gradient :math:`\nabla_x g(\theta,x)` is
 # less than or equal to :math:`10^{-5}` Hartree/Bohr. Typically, this is the
 # convergence criterion used for optimizing molecular geometries in
 # quantum chemistry simulations.
 
-from functools import partial
-
 # store the values of the cost function
-energy = []
+energies = []
 
 # store the values of the bond length
 bond_length = []
@@ -322,33 +319,30 @@ bond_length = []
 # Factor to convert from Bohrs to Angstroms
 bohr_angs = 0.529177210903
 
-for n in range(100):
+for n in range(36):
+    # gradient for params
+    g_param = jax.grad(cost, argnums=[0])(theta, x)[0]
+    theta = theta - 0.8 * g_param
 
-    # Optimize the circuit parameters
-    theta.requires_grad = True
-    x.requires_grad = False
-    theta, _ = opt_theta.step(cost, theta, x)
-
-    # Optimize the nuclear coordinates
-    x.requires_grad = True
-    theta.requires_grad = False
-    _, x = opt_x.step(cost, theta, x, grad_fn=grad_x)
-
-    energy.append(cost(theta, x))
-    bond_length.append(np.linalg.norm(x[0:3] - x[3:6]) * bohr_angs)
+    # gradient for coordinates
+    value, _ = jax.value_and_grad(cost, argnums=1)(theta, x)
+    grad = grad_x(theta, x)
+    x = x - 0.8 * grad
+    energies.append(value)
+    bond_length.append(jnp.linalg.norm(x[0] - x[1]) * bohr_angs) 
 
     if n % 4 == 0:
-        print(f"Step = {n},  E = {energy[-1]:.8f} Ha,  bond length = {bond_length[-1]:.5f} A")
+        print(f"Step = {n},  E = {energies[-1]:.8f} Ha,  bond length = {bond_length[-1]:.5f} A")
 
     # Check maximum component of the nuclear gradient
-    if np.max(grad_x(theta, x)) <= 1e-05:
+    if jnp.max(grad_x(theta, x)) <= 1e-04:
         break
 
-print("\n" f"Final value of the ground-state energy = {energy[-1]:.8f} Ha")
+print("\n" f"Final value of the ground-state energy = {energies[-1]:.8f} Ha")
 print("\n" "Ground-state equilibrium geometry")
 print("%s %4s %8s %8s" % ("symbol", "x", "y", "z"))
 for i, atom in enumerate(symbols):
-    print(f"  {atom}    {x[3 * i]:.4f}   {x[3 * i + 1]:.4f}   {x[3 * i + 2]:.4f}")
+    print(f"  {atom}    {x[0][i]:.4f}   {x[1][i]:.4f}   {x[2][i]:.4f}")
 
 ##############################################################################
 # Next, we plot the values of the ground state energy of the molecule
@@ -362,10 +356,10 @@ fig.set_figwidth(12)
 
 # Add energy plot on column 1
 E_fci = -1.27443765658
-E_vqe = np.array(energy)
+E_vqe = jnp.array(energies)
 ax1 = fig.add_subplot(121)
-ax1.plot(range(n + 1), E_vqe - E_fci, "go-", ls="dashed")
-ax1.plot(range(n + 1), np.full(n + 1, 0.001), color="red")
+ax1.plot(range(n + 1), E_vqe - E_fci, "go", ls="dashed")
+ax1.plot(range(n + 1), jnp.full(n + 1, 0.001), color="red")
 ax1.set_xlabel("Optimization step", fontsize=13)
 ax1.set_ylabel("$E_{VQE} - E_{FCI}$ (Hartree)", fontsize=13)
 ax1.text(5, 0.0013, r"Chemical accuracy", fontsize=13)
@@ -376,8 +370,8 @@ plt.yticks(fontsize=12)
 # Add bond length plot on column 2
 d_fci = 0.986
 ax2 = fig.add_subplot(122)
-ax2.plot(range(n + 1), bond_length, "go-", ls="dashed")
-ax2.plot(range(n + 1), np.full(n + 1, d_fci), color="red")
+ax2.plot(range(n + 1), bond_length, "go", ls="dashed")
+ax2.plot(range(n + 1), jnp.full(n + 1, d_fci), color="red")
 ax2.set_ylim([0.965, 0.99])
 ax2.set_xlabel("Optimization step", fontsize=13)
 ax2.set_ylabel("bond length ($\AA$)", fontsize=13)
@@ -391,7 +385,7 @@ plt.show()
 ##############################################################################
 # |
 # Notice that despite the fact that the ground-state energy is already converged
-# within chemical accuracy (:math:`0.0016` Ha) after the fourth iteration, more
+# within chemical accuracy (:math:`0.0016` Ha) after the first iteration, more
 # optimization steps are required to find the equilibrium bond length of the
 # molecule.
 #
@@ -404,7 +398,7 @@ plt.show()
 #
 # |
 #
-# .. figure:: /demonstrations/mol_geo_opt/fig_movie.gif
+# .. figure:: /_static/demonstration_assets/mol_geo_opt/fig_movie.gif
 #     :width: 50%
 #     :align: center
 #
@@ -466,4 +460,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/alain_delgado.txt
+#

@@ -5,7 +5,7 @@ Qubit tapering
 
 .. meta::
     :property="og:description": Learn how to taper off qubits
-    :property="og:image": https://pennylane.ai/qml/_images/qubit_tapering.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/qubit_tapering.png
 
 .. related::
     tutorial_quantum_chemistry Building molecular Hamiltonians
@@ -52,7 +52,7 @@ For instance, consider the following Hamiltonian
 where all terms in the Hamiltonian act on the second qubit with the :math:`X` operator. It is
 straightforward to show that each term in the Hamiltonian commutes with :math:`I_0 X_1` and the
 ground-state eigenvector of :math:`H'` is also an eigenvector of :math:`I_0 X_1` with eigenvalues
-:math:`\pm 1`. We can also rewrite the Hamiltonian as
+:math:`\pm 1.` We can also rewrite the Hamiltonian as
 
 .. math:: H' = (Z_0 I_1 - I_0 I_1 + Y_0 I_1) I_0 X_1,
 
@@ -60,7 +60,7 @@ which gives us
 
 .. math:: H'|\psi \rangle = \pm1 (Z_0 I_1 - I_0 I_1 + Y_0 I_1)|\psi \rangle,
 
-where :math:`|\psi \rangle` is an eigenvector of :math:`H'`. This means that the Hamiltonian
+where :math:`|\psi \rangle` is an eigenvector of :math:`H'.` This means that the Hamiltonian
 :math:`H` can be simplified as
 
 .. math:: H_{tapered} = \pm1 (Z_0 - I_0 + Y_0).
@@ -90,10 +90,10 @@ operators applied to the :math:`j`-th qubit:
 
 and the eigenvectors of the transformed Hamiltonian :math:`H'` are also eigenvectors of each of the
 :math:`X^{j}` operators. Then we can factor out all of the :math:`X^{j}` operators from the
-transformed Hamiltonian and replace them with their eigenvalues :math:`\pm 1`. This gives us a
+transformed Hamiltonian and replace them with their eigenvalues :math:`\pm 1.` This gives us a
 set of tapered Hamiltonians depending on which eigenvalue :math:`\pm 1` we chose for each of the
 :math:`X^{j}` operators. For  instance, in the case of two tapered qubits, we have four eigenvalue
-sectors: :math:`[+1, +1]`, :math:`[-1, +1]`, :math:`[+1, -1]`, :math:`[-1, -1]`. In these tapered
+sectors: :math:`[+1, +1]`, :math:`[-1, +1]`, :math:`[+1, -1],` :math:`[-1, -1].` In these tapered
 Hamiltonians, the set of :math:`\left \{ j \right \}, j \in \left \{ l, ..., k \right \}` qubits
 are eliminated. For tapered molecular Hamiltonians, it is possible to determine the optimal sector
 of the eigenvalues that corresponds to the ground state. This is explained in more detail in the
@@ -113,7 +113,7 @@ those elements of the group that can be combined, along with their inverses, to 
 member of the group.
 
 Let's use the qubit tapering method and obtain the ground state energy of the `Helium hydride
-cation <https://en.wikipedia.org/wiki/Helium_hydride_ion>`__ :math:`\textrm{HeH}^+`.
+cation <https://en.wikipedia.org/wiki/Helium_hydride_ion>`__ :math:`\textrm{HeH}^+.`
 
 Tapering the molecular Hamiltonian
 ----------------------------------
@@ -122,14 +122,17 @@ In PennyLane, a :doc:`molecular Hamiltonian <tutorial_quantum_chemistry>` can be
 coordinates.
 """
 import pennylane as qml
-from pennylane import numpy as np
+from jax import numpy as jnp
+import jax
 
+jax.config.update("jax_enable_x64", True)
 symbols = ["He", "H"]
-geometry = np.array([[0.00000000, 0.00000000, -0.87818361],
+geometry = jnp.array([[0.00000000, 0.00000000, -0.87818361],
                      [0.00000000, 0.00000000,  0.87818362]])
 
-H, qubits = qml.qchem.molecular_hamiltonian(symbols, geometry, charge=1)
-print(H)
+molecule = qml.qchem.Molecule(symbols, geometry, charge=1)
+H, qubits = qml.qchem.molecular_hamiltonian(molecule)
+H
 
 ##############################################################################
 # This Hamiltonian contains 27 terms where each term acts on up to four qubits.
@@ -148,7 +151,7 @@ for idx, generator in enumerate(generators):
 ##############################################################################
 # Once the operator :math:`U` is applied, each of the Hamiltonian terms will act on the qubits
 # :math:`q_2, q_3` either with the identity or with a Pauli-X operator. For each of these qubits,
-# we can simply replace the Pauli-X operator with one of its eigenvalues :math:`+1` or :math:`-1`.
+# we can simply replace the Pauli-X operator with one of its eigenvalues :math:`+1` or :math:`-1.`
 # This results in a total number of :math:`2^k` Hamiltonians, where :math:`k` is the number of
 # tapered-off qubits and each Hamiltonian corresponds to one eigenvalue sector. The optimal sector
 # corresponding to the ground-state energy of the molecule can be obtained by using the
@@ -160,13 +163,15 @@ paulix_sector = qml.qchem.optimal_sector(H, generators, n_electrons)
 print(paulix_sector)
 
 ##############################################################################
-# The optimal eigenvalues are :math:`-1, -1` for qubits :math:`q_2, q_3`, respectively. We can now
+# The optimal eigenvalues are :math:`-1, -1` for qubits :math:`q_2, q_3,` respectively. We can now
 # build the tapered Hamiltonian with the :func:`~.pennylane.taper` function which
-# constructs the operator :math:`U`, applies it to the Hamiltonian and finally tapers off the
+# constructs the operator :math:`U,` applies it to the Hamiltonian and finally tapers off the
 # qubits :math:`q_2, q_3` by replacing the Pauli-X operators acting on those qubits with the optimal
 # eigenvalues.
 
 H_tapered = qml.taper(H, generators, paulixops, paulix_sector)
+H_tapered_coeffs, H_tapered_ops = H_tapered.terms()
+H_tapered = qml.Hamiltonian(jnp.real(jnp.array(H_tapered_coeffs)), H_tapered_ops)
 print(H_tapered)
 
 ##############################################################################
@@ -184,6 +189,16 @@ print("Eigenvalues of H:\n", qml.eigvals(H_sparse, k=16))
 print("\nEigenvalues of H_tapered:\n", qml.eigvals(H_tapered_sparse, k=4))
 
 ##############################################################################
+# Note that a second-quantized Hamiltonian is independent of the number of electrons and its
+# eigenspectrum contains the energies of the neutral and charged molecules. Therefore, the
+# smallest eigenvalue returned by :func:`~.pennylane.eigvals` for a molecular Hamiltonian
+# might correspond to the neutral or charged molecule. While in the case of :math:`\textrm{HeH}^+,`
+# qubit tapering allows specifying the optimal sector of the eigenvectors corresponding only to the
+# correct number of electrons, it is generally guaranteed that the optimal sector covers all
+# eigenvectors with the correct number of electrons, but may contain additional eigenvectors of
+# different charge. Therefore, the ground-state energy of the :math:`\textrm{HeH}^+` cation is
+# the smallest eigenvalue of the tapered Hamiltonian.
+#
 # Tapering the reference state
 # ----------------------------
 # The ground state Hartree-Fock energy of :math:`\textrm{HeH}^+` can be computed by directly
@@ -198,28 +213,28 @@ print(state_tapered)
 
 ##############################################################################
 # Recall that the original Hartree-Fock state for the :math:`\textrm{HeH}^+` cation is
-# :math:`[1 1 0 0]`. We can now generate the qubit representation of these states and compute the
+# :math:`[1 1 0 0].` We can now generate the qubit representation of these states and compute the
 # Hartree-Fock energies for each Hamiltonian.
 
 dev = qml.device("default.qubit", wires=H.wires)
-@qml.qnode(dev, interface="autograd")
+@qml.qnode(dev, interface="jax")
 def circuit():
-    qml.BasisState(np.array([1, 1, 0, 0]), wires=H.wires)
+    qml.BasisState(jnp.array([1, 1, 0, 0]), wires=H.wires)
     return qml.state()
 
 qubit_state = circuit()
 HF_energy = qubit_state.T @ H.sparse_matrix().toarray() @ qubit_state
-print(f"HF energy: {np.real(HF_energy):.8f} Ha")
+print(f"HF energy: {jnp.real(HF_energy):.8f} Ha")
 
-dev = qml.device("default.qubit", wires=H_tapered.wires)
-@qml.qnode(dev, interface="autograd")
+dev = qml.device("lightning.qubit", wires=H_tapered.wires)
+@qml.qnode(dev, interface="jax")
 def circuit():
-    qml.BasisState(np.array([1, 1]), wires=H_tapered.wires)
+    qml.BasisState(jnp.array([1, 1]), wires=H_tapered.wires)
     return qml.state()
 
 qubit_state = circuit()
 HF_energy = qubit_state.T @ H_tapered.sparse_matrix().toarray() @ qubit_state
-print(f"HF energy (tapered): {np.real(HF_energy):.8f} Ha")
+print(f"HF energy (tapered): {jnp.real(HF_energy):.8f} Ha")
 
 ##############################################################################
 # These values are identical to the reference Hartree-Fock energy :math:`-2.8543686493` Ha.
@@ -244,8 +259,9 @@ tapered_singles = [
                         wire_order=H.wires, op_wires=single) for single in singles
 ]
 
-dev = qml.device("default.qubit", wires=H_tapered.wires)
-@qml.qnode(dev, interface="autograd")
+dev = qml.device("lightning.qubit", wires=H_tapered.wires)
+
+@qml.qnode(dev, interface="jax")
 def tapered_circuit(params):
     qml.BasisState(state_tapered, wires=H_tapered.wires)
     for idx, tapered_op in enumerate(tapered_doubles + tapered_singles):
@@ -256,13 +272,29 @@ def tapered_circuit(params):
 # We define an optimizer and the initial values of the circuit parameters and optimize the circuit
 # parameters with respect to the ground state energy.
 
-optimizer = qml.GradientDescentOptimizer(stepsize=0.5)
-params = np.zeros(len(doubles) + len(singles), requires_grad=True)
+import optax
+import catalyst
 
-for n in range(1, 41):
-    params, energy = optimizer.step_and_cost(tapered_circuit, params)
-    if not n % 5:
-        print(f"n: {n}, E: {energy:.8f} Ha, Params: {params}")
+opt = optax.sgd(learning_rate=0.8) # sgd stands for StochasticGradientDescent
+init_params = jnp.zeros(len(doubles) + len(singles))
+
+def update_step(i, params, opt_state):
+    """Perform a single gradient update step"""
+    grads = catalyst.grad(tapered_circuit)(params)
+    updates, opt_state = opt.update(grads, opt_state)
+    params = optax.apply_updates(params, updates)
+    return (params, opt_state)
+
+loss_history = []
+
+opt_state = opt.init(init_params)
+params = init_params
+
+for i in range(1, 41):
+    params, opt_state = update_step(i, params, opt_state)
+    energy = tapered_circuit(params)
+    if not i % 5:
+        print(f"n: {i}, E: {energy:.8f} Ha, Params: {params}")
 
 ##############################################################################
 # The computed energy matches the FCI energy, :math:`-2.862595242378` Ha, while the number of qubits
@@ -295,6 +327,4 @@ for n in range(1, 41):
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/utkarsh_azad.txt
 #
-# .. include:: ../_static/authors/soran_jahangiri.txt

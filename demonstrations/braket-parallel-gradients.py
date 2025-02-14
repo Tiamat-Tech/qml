@@ -4,7 +4,7 @@ Computing gradients in parallel with Amazon Braket
 
 .. meta::
     :property="og:description": Parallelize gradient calculations with Amazon Braket
-    :property="og:image": https://pennylane.ai/qml/_images/pl-braket.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/pl-braket.png
 
 .. related::
 
@@ -92,13 +92,8 @@ along with specification of the corresponding ARN.
     <https://github.com/aws/amazon-braket-sdk-python#prerequisites>`__ for accessing Braket from
     Python.
 
-Let's load the SV1 simulator in PennyLane with 25 qubits. We must specify both the ARN and
-the address of the `S3 bucket <https://aws.amazon.com/s3/>`__ where results are to be stored:
+Let's load the SV1 simulator in PennyLane with 25 qubits by specifying the device ARN.
 """
-
-my_bucket = "amazon-braket-Your-Bucket-Name"  # the name of the bucket, keep the 'amazon-braket-' prefix and then include the bucket name
-my_prefix = "Your-Folder-Name"  # the name of the folder in the bucket
-s3_folder = (my_bucket, my_prefix)
 
 device_arn = "arn:aws:braket:::device/quantum-simulator/amazon/sv1"
 
@@ -114,7 +109,6 @@ dev_remote = qml.device(
     "braket.aws.qubit",
     device_arn=device_arn,
     wires=n_wires,
-    s3_destination_folder=s3_folder,
     parallel=True,
 )
 
@@ -143,7 +137,7 @@ def circuit(params):
 
     # Measure all qubits to make sure all's good with Braket
     observables = [qml.PauliZ(n_wires - 1)] + [qml.Identity(i) for i in range(n_wires - 1)]
-    return qml.expval(qml.operation.Tensor(*observables))
+    return qml.expval(qml.prod(*observables))
 
 
 ##############################################################################
@@ -195,12 +189,11 @@ print("Execution time on local device (seconds):", t_1_local - t_0_local)
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
-#      Execution time on remote device (seconds): 3.5898206680030853
-#      Execution time on local device (seconds): 23.50668462700196
+#      Execution time on remote device (seconds): 7.571744918823242
+#      Execution time on local device (seconds): 27.32159185409546
 #
 # Nice! These timings highlight the advantage of using the Amazon Braket SV1 device for simulations
 # with large qubit numbers. In general, simulation times scale exponentially with the number of
@@ -230,16 +223,18 @@ t_0_remote_grad = time.time()
 d_qnode_remote(params)
 t_1_remote_grad = time.time()
 
-print("Gradient calculation time on remote device (seconds):", t_1_remote_grad - t_0_remote_grad)
+print(
+    "Gradient calculation time on remote device (seconds):",
+    t_1_remote_grad - t_0_remote_grad,
+)
 
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
-#      Gradient calculation time on remote device (seconds): 20.92005863400118
+#      Gradient calculation time on remote device (seconds): 6.4775872230529785
 #
 # Now, the local device:
 #
@@ -253,18 +248,20 @@ t_0_local_grad = time.time()
 d_qnode_local(params)
 t_1_local_grad = time.time()
 
-print("Gradient calculation time on local device (seconds):", t_1_local_grad - t_0_local_grad)
+print(
+    "Gradient calculation time on local device (seconds):",
+    t_1_local_grad - t_0_local_grad,
+)
 
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
-#      Gradient calculation time on local device (seconds): 941.8518133479993
+#      Gradient calculation time on local device (seconds): 181.5902488231659
 #
-# Wow, the local device needs around 15 minutes or more! Compare this to less than a minute spent
+# Wow, the local device needs around 3 minutes! Compare this to less around 6 seconds spent
 # calculating the gradient on SV1. This provides a powerful lesson in parallelization.
 #
 # What if we had run on SV1 with ``parallel=False``? It would have taken around 3 minutes—still
@@ -316,7 +313,6 @@ dev = qml.device(
     "braket.aws.qubit",
     device_arn=device_arn,
     wires=n_wires,
-    s3_destination_folder=s3_folder,
     parallel=True,
     max_parallel=20,
     poll_timeout_seconds=30,
@@ -353,7 +349,7 @@ def circuit(params, **kwargs):
 
 
 cost_function = qml.QNode(circuit, dev)
-optimizer = qml.AdagradOptimizer(stepsize=0.1)
+optimizer = qml.AdagradOptimizer(stepsize=0.01)
 
 ##############################################################################
 # We're now set up to train the circuit! Note, if you are training this circuit yourself, you may
@@ -394,41 +390,40 @@ print("Parameters saved to params.npy")
 ##############################################################################
 # .. rst-class:: sphx-glr-script-out
 #
-#  Out:
 #
 #  .. code-block:: none
 #
-#    Initial cost: -29.98570234095951
+#    Initial cost: -29.98570234095953
 #    Completed iteration 1
-#    Time to complete iteration: 93.96246099472046 seconds
-#    Cost at step 1: -27.154071768632154
+#    Time to complete iteration: 11.028863906860352 seconds
+#    Cost at step 1: -29.995107300982195
 #    Completed iteration 2
-#    Time to complete iteration: 84.80994844436646 seconds
-#    Cost at step 2: -29.98726230006233
+#    Time to complete iteration: 10.132628917694092 seconds
+#    Cost at step 2: -29.99981056829394
 #    Completed iteration 3
-#    Time to complete iteration: 83.13504934310913 seconds
-#    Cost at step 3: -29.999163153600062
+#    Time to complete iteration: 9.985284090042114 seconds
+#    Cost at step 3: -30.00233965117029
 #    Completed iteration 4
-#    Time to complete iteration: 85.61391234397888 seconds
-#    Cost at step 4: -30.002158646044307
+#    Time to complete iteration: 10.059210062026978 seconds
+#    Cost at step 4: -30.01206799710033
 #    Completed iteration 5
-#    Time to complete iteration: 86.70688223838806 seconds
-#    Cost at step 5: -30.012058444011906
+#    Time to complete iteration: 9.966963052749634 seconds
+#    Cost at step 5: -30.048670540725286
 #    Completed iteration 6
-#    Time to complete iteration: 83.26341080665588 seconds
-#    Cost at step 6: -30.063709712612443
+#    Time to complete iteration: 11.216133832931519 seconds
+#    Cost at step 6: -30.13240170461342
 #    Completed iteration 7
-#    Time to complete iteration: 85.25566911697388 seconds
-#    Cost at step 7: -30.32522304705352
+#    Time to complete iteration: 10.09446096420288 seconds
+#    Cost at step 7: -30.25935979157505
 #    Completed iteration 8
-#    Time to complete iteration: 83.55433392524719 seconds
-#    Cost at step 8: -31.411030331978186
+#    Time to complete iteration: 10.020287990570068 seconds
+#    Cost at step 8: -30.41499293575487
 #    Completed iteration 9
-#    Time to complete iteration: 84.08745908737183 seconds
-#    Cost at step 9: -33.87153965616938
+#    Time to complete iteration: 10.345153093338013 seconds
+#    Cost at step 9: -30.587353834845057
 #    Completed iteration 10
-#    Time to complete iteration: 87.4032838344574 seconds
-#    Cost at step 10: -36.05424874438809
+#    Time to complete iteration: 10.07306981086731 seconds
+#    Cost at step 10: -30.76855713404487
 #    Parameters saved to params.npy
 #
 # This example shows us that a 20-qubit QAOA problem can be trained within around 1-2 minutes per
@@ -437,13 +432,180 @@ print("Parameters saved to params.npy")
 # expect for training to take much longer.
 #
 # The results of this optimization can be investigated by saving the parameters
-# :download:`here </demonstrations/braket/params.npy>` to your working directory. See if you can
+# :download:`here </_static/demonstration_assets/braket/params.npy>` to your working directory. See if you can
 # analyze the performance of this optimized circuit following a similar strategy to the
 # :doc:`QAOA tutorial<tutorial_qaoa_intro>`. Did we find a large graph cut?
 #
+# Large-scale experiments with Hybrid Jobs
+# ----------------------------------
+# We have seen how we can use PennyLane on Braket to solve graph optimization problems with QAOA.
+# However, we have only used Amazon Braket for the quantum simulations, leaving the classical
+# Python code to run on our laptop.
+# This is great for getting started with small experiments, but for large-scale algorithms running
+# them on a laptop is impractical due to potential crashes, restarts or even hardware limitations
+# such as limited memory. With Amazon Braket Hybrid Jobs, you can send your entire algorithm, both
+# classical and quantum parts, to run on AWS while you get a coffee!
 #
+# With a single line of code, we'll see how to scale from PennyLane simulators on your laptop to
+# run full-scale experiments on AWS that leverage both powerful classical compute and quantum
+# devices. For more details on hybrid jobs see
+# :doc:`getting started with hybrid jobs <getting_started_with_hybrid_jobs>`.
+#
+# .. warning::
+#     The following demo is only compatible with Python version 3.10.
+#
+# In the following code, we run the same QAOA optimization as before, but this time on an
+# `Amazon EC2 ml.c5.xlarge instance <https://aws.amazon.com/ec2/instance-types/c5/>`__
+# instead of our laptop. We specify this with the `instance_config` for our hybrid job.
+# A complete set of options is available in the `Braket documentation
+# <https://docs.aws.amazon.com/braket/latest/developerguide/braket-hybrid-job-decorator.html>`__.
+#
+
+from braket.jobs import InstanceConfig, hybrid_job
+from braket.jobs.metrics import log_metric
+from braket.tracking import Tracker
+
+# choose a large instance type for our experiment
+large_instance = InstanceConfig(instanceType="ml.c5.xlarge")
+
+
+@hybrid_job(device="local:pennylane/lightning.qubit", instance_config=large_instance)
+def qaoa_training(n_iterations, n_layers=2):
+    braket_tasks_cost = Tracker().start()  # track Braket quantum tasks costs
+
+    # declare PennyLane device
+    dev = qml.device("lightning.qubit", wires=n_wires)
+
+    @qml.qnode(dev)
+    def cost_function(params, **kwargs):
+        for i in range(n_wires):  # Prepare an equal superposition over all qubits
+            qml.Hadamard(wires=i)
+        qml.layer(qaoa_layer, n_layers, params[0], params[1])
+        return qml.expval(cost_h)
+
+    params = 0.01 * np.random.uniform(size=[2, n_layers])
+    optimizer = qml.AdagradOptimizer(stepsize=0.01)
+
+    # run the classical-quantum iterations
+    for i in range(n_iterations):
+        params, cost_before = optimizer.step_and_cost(cost_function, params)
+
+        log_metric(metric_name="cost", value=cost_before, iteration_number=i)
+
+    return {
+        "parameters": params,
+        "final_cost": cost_function(params),
+        "braket_tasks_cost": braket_tasks_cost.qpu_tasks_cost()
+        + braket_tasks_cost.simulator_tasks_cost(),
+    }
+
+
+##############################################################################
+# Now we create a hybrid job by calling the function as usual. This returns an ``AwsQuantumJob``
+# object that contains the device ARN, region, and job name. The hybrid job will start running
+# immediately since we are not using a QPU in this example.
+#
+# .. warning::
+#     Running the the following cell will result charges to your AWS account based on Amazon EC2
+#     pricing.
+#
+
+job = qaoa_training(n_iterations=20, n_layers=2)
+print(job)
+
+##############################################################################
+# .. rst-class:: sphx-glr-script-out
+#
+#  .. code-block:: none
+#
+#       AwsQuantumJob('arn':'arn:aws:braket:<aws-region>:<account_id>:job/qaoa-training-1695044583')
+
+######################################################################
+# The hybrid job automatically captures the function arguments as hyperparameters.
+# In this case, we set ``n_iterations = 20`` and ``n_layers = 2`` as the hyperparameters.
+#
+# We can check the status with:
+#
+
+job.state()
+
+##############################################################################
+# .. rst-class:: sphx-glr-script-out
+#
+#  .. code-block:: none
+#
+#       'QUEUED'
+
+##############################################################################
+# The hybrid job will be scheduled to run and will appear in the "QUEUED" state.
+# If the target is a QPU, the job will be queued with other jobs.
+# If the target device is not a QPU, the hybrid job should start immediately.
+# Note that since the algorithm code is run in a containerized environment, it takes approximately 1
+# minute to start running your algorithm.
+#
+# After the hybrid job is completed, we can get the results with ``job.result()``. For this example,
+# it should take approximately 6 minutes.
+#
+
+job.result()
+
+##############################################################################
+# .. rst-class:: sphx-glr-script-out
+#
+#  .. code-block:: none
+#
+#       {'parameters': [[-0.2615367426048209, -0.46218141633156967],
+#                       [0.3853200394389563, 0.2402391372931216]],
+#        'final_cost': -37.76176577995996,
+#        'braket_tasks_cost': 0}
+
+
+##############################################################################
+# The results included the three values from the return statement of our function.
+# Additionally, we can retrieve the metrics recorded during the training with:
+#
+
+metrics = job.metrics()
+
+##############################################################################
+# Now that we have the metrics, we can plot the convergence of the loss function.
+# We use the pandas library to load the metrics into a DataFrame, and plot the loss as a function of
+# iteration number.
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+plt.style.use("pennylane.drawer.plot")
+
+df = pd.DataFrame(metrics)
+
+df.sort_values(by=["iteration_number"]).plot(x="iteration_number", y="cost")
+
+
+##############################################################################
+#
+# .. figure:: ../_static/demonstration_assets/braket/qaoa_training.png
+#     :align: center
+#     :scale: 75%
+#     :alt: Convergence of cost function for QAOA training.
+#     :target: javascript:void(0);
+
+##############################################################################
+# Great! The loss function gets lower with each iteration, reaching a value of approximately -37.8.
+#
+# Conclusion
+# ----------------------------------
+# In this tutorial, we found the solution to a MaxCut problem using QAOA. We used Amazon Braket
+# on-demand simulators to efficiently parallelize the parameter-shift rule for gradients. We also
+# demonstrated how to scale-up experiments with your own simulator, such as PennyLane Lightning, by
+# running on Amazon Braket Hybrid Jobs. In both approaches, we perform the intensive calculations on
+# the cloud instead of our laptop.
+#
+# For more examples of how to use hybrid jobs, see the
+# `Amazon Braket examples GitHub <https://github.com/amazon-braket/amazon-braket-examples/tree/main/examples/hybrid_jobs>`__.
+#
+
+##############################################################################
 # About the authors
 # -----------------
-# .. include:: ../_static/authors/thomas_bromley.txt
 #
-# .. include:: ../_static/authors/maria_schuld.txt

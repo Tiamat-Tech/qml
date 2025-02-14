@@ -6,12 +6,17 @@ Building molecular Hamiltonians
 .. meta::
     :property="og:description": Learn how to build electronic Hamiltonians of molecules.
 
-    :property="og:image": https://pennylane.ai/qml/_images/water_structure.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/water_structure.png
 
 .. related::
    tutorial_vqe A brief overview of VQE
 
-*Author: Alain Delgado — Posted: 02 August 2020. Last updated: 25 June 2022.*
+*Author: Alain Delgado — Posted: 02 August 2020. Last updated: 29 August 2023.*
+
+.. note::
+
+    A wide variety of molecular data, including Hamiltonians, is
+    available on the `PennyLane Datasets service <https://pennylane.ai/datasets>`__.
 
 The ultimate goal of computational quantum chemistry is to unravel the
 quantum effects that determine the structure and properties of molecules. Reaching
@@ -50,7 +55,7 @@ Defining the molecular structure
 In this example we construct the electronic Hamiltonian of the water molecule.
 
 
-.. figure:: ../demonstrations/quantum_chemistry/water_structure.png
+.. figure:: ../_static/demonstration_assets/quantum_chemistry/water_structure.png
     :width: 30%
     :align: center
 
@@ -64,7 +69,7 @@ array with the nuclear coordinates in
 import numpy as np
 
 symbols = ["H", "O", "H"]
-coordinates = np.array([-0.0399, -0.0038, 0.0, 1.5780, 0.8540, 0.0, 2.7909, -0.5159, 0.0])
+coordinates = np.array([[-0.0399, -0.0038, 0.0], [1.5780, 0.8540, 0.0], [2.7909, -0.5159, 0.0]])
 
 ##############################################################################
 # The :func:`~.pennylane.qchem.read_structure` function can also be used to read the
@@ -104,7 +109,7 @@ symbols, coordinates = qchem.read_structure("h2o.xyz")
 # In the second quantization formalism, the electronic wave function of the molecule
 # is represented in the occupation number basis. For :math:`M` *spin* molecular
 # orbitals, the elements of this basis are labelled as
-# :math:`\vert n_0, n_1, \dots, n_{M-1} \rangle`, where :math:`n_i = 0,1`
+# :math:`\vert n_0, n_1, \dots, n_{M-1} \rangle,` where :math:`n_i = 0,1`
 # indicates the occupation of each orbital. In this representation, the electronic
 # Hamiltonian is given by
 #
@@ -134,14 +139,15 @@ symbols, coordinates = qchem.read_structure("h2o.xyz")
 #     H = \sum_j C_j \otimes_i \sigma_i^{(j)},
 #
 # where :math:`C_j` is a scalar coefficient and :math:`\sigma_i` represents an
-# element of the Pauli group :math:`\{ I, X, Y, Z \}`.
+# element of the Pauli group :math:`\{ I, X, Y, Z \}.`
 #
 # In PennyLane we have the :func:`~.pennylane.qchem.molecular_hamiltonian`
 # function which encapsulates all the steps explained above. It simplifies the process of building
-# the electronic Hamiltonian to a single line of code. We just need to input the
-# symbols and the nuclear coordinates of the molecule, as shown below:
+# the electronic Hamiltonian to a single line of code. We just need to input
+# the molecule, as shown below:
 
-H, qubits = qchem.molecular_hamiltonian(symbols, coordinates)
+molecule = qchem.Molecule(symbols, coordinates)
+H, qubits = qchem.molecular_hamiltonian(molecule)
 print("Number of qubits: {:}".format(qubits))
 print("Qubit Hamiltonian")
 print(H)
@@ -149,7 +155,7 @@ print(H)
 ##############################################################################
 # Advanced features
 # -----------------
-# The :func:`~.pennylane.qchem.molecular_hamiltonian` function allows us to define additional
+# The :class:`~.pennylane.qchem.Molecule` object allows us to define additional
 # keyword arguments to solve the Hartree-Fock equations of more complicated systems.
 # The net charge of the molecule may be specified to simulate positively or negatively
 # charged molecules. For a neutral system we choose
@@ -168,7 +174,7 @@ charge = 0
 #
 # |
 #
-# .. figure:: ../demonstrations/quantum_chemistry/hf_references.png
+# .. figure:: ../_static/demonstration_assets/quantum_chemistry/hf_references.png
 #     :width: 50%
 #     :align: center
 #
@@ -200,7 +206,7 @@ basis_set = "sto-3g"
 # Within this approximation, a certain number of **active electrons** are allowed to
 # populate a finite set of **active orbitals**.
 #
-# .. figure:: ../demonstrations/quantum_chemistry/sketch_active_space.png
+# .. figure:: ../_static/demonstration_assets/quantum_chemistry/sketch_active_space.png
 #     :width: 40%
 #     :align: center
 #
@@ -209,7 +215,7 @@ basis_set = "sto-3g"
 #     to perform the quantum simulations.
 #
 # For the water molecule in a minimal basis set we have a total of ten electrons
-# and seven molecular orbitals. In this example we define an symmetric active space with
+# and seven molecular orbitals. In this example we define a symmetric active space with
 # four electrons and four active orbitals using
 # the :func:`~.pennylane.qchem.active_space` function:
 
@@ -228,12 +234,16 @@ print("Number of qubits: {:}".format(2 * len(active)))
 # Finally, we use the :func:`~.pennylane.qchem.molecular_hamiltonian` function to
 # build the resulting Hamiltonian of the water molecule:
 
-H, qubits = qchem.molecular_hamiltonian(
+molecule = qchem.Molecule(
     symbols,
     coordinates,
     charge=charge,
     mult=multiplicity,
-    basis=basis_set,
+    basis_name=basis_set
+)
+
+H, qubits = qchem.molecular_hamiltonian(
+    molecule,
     active_electrons=4,
     active_orbitals=4,
 )
@@ -245,7 +255,7 @@ print(H)
 ##############################################################################
 # In this case, since we have truncated the basis of molecular orbitals, the resulting
 # observable is an approximation of the Hamiltonian generated in the
-# section :ref:`hamiltonian`.
+# section `Building the Hamiltonian <https://pennylane.ai/qml/demos/tutorial_quantum_chemistry/#building-the-hamiltonian>`__.
 #
 # OpenFermion-PySCF backend
 # -------------------------
@@ -256,7 +266,8 @@ print(H)
 # backend can be selected by setting ``method='pyscf'`` in
 # :func:`~.pennylane.qchem.molecular_hamiltonian`:
 
-H, qubits = qchem.molecular_hamiltonian(symbols, coordinates, method="pyscf")
+molecule = qchem.Molecule(symbols, coordinates)
+H, qubits = qchem.molecular_hamiltonian(molecule, method="pyscf")
 print(H)
 
 ##############################################################################
@@ -317,4 +328,4 @@ print(H)
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/alain_delgado.txt
+#

@@ -5,7 +5,7 @@ Frugal shot optimization with Rosalin
 .. meta::
     :property="og:description": The Rosalin optimizer uses a measurement-frugal optimization strategy to minimize the
          number of times a quantum computer is accessed.
-    :property="og:image": https://pennylane.ai/qml/_images/sphx_glr_tutorial_rosalin_002.png
+    :property="og:image": https://pennylane.ai/qml/_static/demonstration_assets/sphx_glr_tutorial_rosalin_002.png
 
 .. related::
 
@@ -35,8 +35,8 @@ Background
 
 While a large number of papers in variational quantum algorithms focus on the
 choice of circuit ansatz, cost function, gradient computation, or initialization method,
-the optimization strategy---an important component affecting both convergence time and
-quantum resource dependence---is not as frequently considered. Instead, common
+the optimization strategy—an important component affecting both convergence time and
+quantum resource dependence—is not as frequently considered. Instead, common
 'out-of-the-box' classical optimization techniques, such as gradient-free
 methods (COBLYA, Nelder-Mead), gradient-descent, and Hessian-free methods (L-BFGS) tend to be used.
 
@@ -86,7 +86,7 @@ can be expressed as the weighted sum of each individual term:
 In the :doc:`doubly stochastic gradient descent demonstration </demos/tutorial_doubly_stochastic>`,
 we estimated this expectation value by **uniformly sampling** a subset of the terms
 at each optimization step, and evaluating each term by using the same finite number of shots
-:math:`N`.
+:math:`N.`
 
 However, what happens if we use a weighted approach to determine how to distribute
 our samples across the terms of the Hamiltonian? In **weighted random sampling** (WRS),
@@ -102,7 +102,7 @@ with event probabilities
 
 That is, the number of shots assigned to the measurement of the expectation value of the
 :math:`i\text{th}` term of the Hamiltonian is drawn from a probability distribution
-*proportional to the magnitude of its coefficient* :math:`c_i`.
+*proportional to the magnitude of its coefficient* :math:`c_i.`
 
 To see this strategy in action, consider the Hamiltonian
 
@@ -136,7 +136,7 @@ num_layers = 2
 num_wires = 2
 
 # create a device that estimates expectation values using a finite number of shots
-non_analytic_dev = qml.device("default.qubit", wires=num_wires, shots=100)
+non_analytic_dev = qml.device("default.qubit", wires=num_wires, shots=100, seed=432423)
 
 # create a device that calculates exact expectation values
 analytic_dev = qml.device("default.qubit", wires=num_wires, shots=None)
@@ -151,7 +151,7 @@ print(prob_shots)
 
 ##############################################################################
 # We can now use SciPy to create our multinomial distributed random variable
-# :math:`S`, using the number of trials (total shot number) and probability values:
+# :math:`S,` using the number of trials (total shot number) and probability values:
 
 from scipy.stats import multinomial
 
@@ -180,7 +180,7 @@ print(sum(samples))
 #    :class:`~.pennylane.templates.layers.StronglyEntanglingLayers`.
 #
 # 3. And, last but not least, estimate the expectation value
-#    :math:`\langle H\rangle = \sum_i c_i\langle h_i\rangle`.
+#    :math:`\langle H\rangle = \sum_i c_i\langle h_i\rangle.`
 #
 
 from pennylane.templates.layers import StronglyEntanglingLayers
@@ -270,7 +270,7 @@ for i in range(100):
 
 from matplotlib import pyplot as plt
 
-plt.style.use("seaborn")
+plt.style.use("seaborn-v0_8")
 plt.plot(shots_wrs, cost_wrs, "b", label="Adam WRS")
 plt.plot(shots_adam, cost_adam, "g", label="Adam")
 
@@ -325,14 +325,14 @@ plt.show()
 # :doc:`parameter-shift rule </glossary/quantum_gradient>`. It works roughly as follows:
 #
 # 1. The initial step of the optimizer is performed with some specified minimum
-#    number of shots, :math:`s_{min}`, for all partial derivatives.
+#    number of shots, :math:`s_{min},` for all partial derivatives.
 #
 # 2. The parameter-shift rule is then used to estimate the gradient :math:`g_i`
-#    for each parameter :math:`\theta_i`, parameters, as well as the *variances*
+#    for each parameter :math:`\theta_i,` parameters, as well as the *variances*
 #    :math:`v_i` of the estimated gradients.
 #
-# 3. Gradient descent is performed for each parameter :math:`\theta_i`, using
-#    the pre-defined learning rate :math:`\alpha` and the gradient information :math:`g_i`:
+# 3. Gradient descent is performed for each parameter :math:`\theta_i,` using
+#    the pre-defined learning rate :math:`\alpha` and the gradient information :math:`g_i:`
 #
 #    .. math:: \theta_i = \theta_i - \alpha g_i.
 #
@@ -364,14 +364,14 @@ plt.show()
 #
 # In addition to the above, to counteract the presence of noise in the system, a
 # running average of :math:`g_i` and :math:`s_i` (:math:`\chi_i` and :math:`\xi_i` respectively)
-# are used when computing :math:`\gamma_i` and :math:`s_i`.
+# are used when computing :math:`\gamma_i` and :math:`s_i.`
 #
 # .. note::
 #
 #     In classical machine learning, the Lipschitz constant of the cost function is generally
 #     unknown. However, for a variational quantum algorithm with cost of the form
-#     :math:`f(x) = \langle \psi(x) | \hat{H} |\psi(x)\rangle`,
-#     an upper bound on the Lipschitz constant is given by :math:`L < \sum_i|c_i|`,
+#     :math:`f(x) = \langle \psi(x) | \hat{H} |\psi(x)\rangle,`
+#     an upper bound on the Lipschitz constant is given by :math:`L < \sum_i|c_i|,`
 #     where :math:`c_i` are the coefficients of :math:`\hat{H}` when decomposed
 #     into a linear combination of Pauli-operator tensor products.
 #
@@ -379,7 +379,7 @@ plt.show()
 # ~~~~~~~~~~~~~~~~~~~~~~
 #
 # Let's now modify iCANS above to incorporate weighted random sampling of Hamiltonian
-# terms --- the Rosalin frugal shot optimizer.
+# terms — the Rosalin frugal shot optimizer.
 #
 # Rosalin takes several hyper-parameters:
 #
@@ -387,13 +387,13 @@ plt.show()
 #   of each term in the Hamiltonian. Note that this must be larger than 2 for the variance
 #   of the gradients to be computed.
 #
-# * ``mu``: The running average constant :math:`\mu\in[0, 1]`. Used to control how quickly the
+# * ``mu``: The running average constant :math:`\mu\in[0, 1].` Used to control how quickly the
 #   number of shots recommended for each gradient component changes.
 #
 # * ``b``: Regularization bias. The bias should be kept small, but non-zero.
 #
 # * ``lr``: The learning rate. Recall from above that the learning rate *must* be such
-#   that :math:`\alpha < 2/L = 2/\sum_i|c_i|`.
+#   that :math:`\alpha < 2/L = 2/\sum_i|c_i|.`
 #
 # Since the Rosalin optimizer has a state that must be preserved between optimization steps,
 # let's use a class to create our optimizer.
@@ -436,7 +436,8 @@ class Rosalin:
         Since we are performing single-shot estimates, the QNodes must be
         set to 'sample' mode.
         """
-        rosalin_device = qml.device("default.qubit", wires=num_wires, shots=100)
+        # note that convergence depends on seed for random number generation
+        rosalin_device = qml.device("default.qubit", wires=num_wires, shots=100, seed=93754352)
 
         # determine the shot probability per term
         prob_shots = np.abs(coeffs) / np.sum(np.abs(coeffs))
@@ -541,7 +542,7 @@ class Rosalin:
 
         argmax_gamma = np.unravel_index(np.argmax(gamma), gamma.shape)
         smax = s[argmax_gamma]
-        self.s = np.clip(s, min(2, self.min_shots), smax)
+        self.s = np.clip(s, min(2, self.min_shots), max(2, smax))
 
         self.k += 1
         return params
@@ -591,9 +592,9 @@ print(adam_shots_per_step)
 params = init_params
 opt = qml.AdamOptimizer(0.07)
 
-non_analytic_dev.shots = adam_shots_per_eval
+adam_dev = qml.device('default.qubit', shots=adam_shots_per_eval, seed=595905)
 
-@qml.qnode(non_analytic_dev, diff_method="parameter-shift", interface="autograd")
+@qml.qnode(adam_dev, diff_method="parameter-shift", interface="autograd")
 def cost(weights):
     StronglyEntanglingLayers(weights, wires=non_analytic_dev.wires)
     return qml.expval(qml.Hamiltonian(coeffs, obs))
@@ -610,7 +611,7 @@ for i in range(100):
 ##############################################################################
 # Plotting both experiments:
 
-plt.style.use("seaborn")
+plt.style.use("seaborn-v0_8")
 plt.plot(shots_rosalin, cost_rosalin, "b", label="Rosalin")
 plt.plot(shots_adam, cost_adam, "g", label="Adam")
 
@@ -662,4 +663,4 @@ plt.show()
 #
 # About the author
 # ----------------
-# .. include:: ../_static/authors/josh_izaac.txt
+#
